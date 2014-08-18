@@ -6,29 +6,39 @@ import math as m
 
 
 """ This class represents a set of radial grid points having given
-the intended number of cells for radius of star and radius of disk.
+the number of cells and radius of star & radius of disk. Uses numpy arrays.
 """
-
-
 class RadialCells(object):
     def __init__(self, number, rStar, rDisk):
+        # simple constructor without setters, getters and stuff. thus, the user is
+        # is responsible to use the class in a proper way.
         self.number = float(number)
         self.rStar = float(rStar)
         self.rDisk = float(rDisk)
         self.f = self.__calcF()
-        self.rValues = []
+        self.rValues = None
         self.__calcRvalues()
 
-    # not to be called from the outside
+    # ===============
+    # inner methods:
+    # ===============
+
+    # definition see page 973, B1b
     def __calcF(self):
         return (self.rDisk / self.rStar) ** (1 / (self.number - 1))
 
-    # not to be called from the outside;
+    # definition see page 972, B1a
     def __calcRvalues(self):
+        self.rValues = np.array([])
         for i in range(1, int(self.number)):
-            self.rValues.append(self.f ** (i - 1) * self.rStar)
-        self.rValues.append(self.rDisk)
+            value = self.f ** (i - 1) * self.rStar
+            self.rValues = np.append(self.rValues, value)
+        # here, we assert that r_N = rDisk for completness but
+        # due to numerical errors, we have to fix that the following
+        # way
+        self.rValues = np.append(self.rValues, self.rDisk)
 
+    # simple toString method for proper debug and information
     def __str__(self):
         return "number: " + str(self.number) + "\n" \
                + "rStar: " + str(self.rStar) + "\n" \
@@ -36,38 +46,47 @@ class RadialCells(object):
 
 
 """ This class holds all the matrices needed for numerical derivatives and integration. Since matrix creation is
-quite intense, we use a non-static class here in order to store the calculated matrices. We use Numpy.Matrix.
+quite intense in time and power, we use a non-static class here in order to store the calculated matrices.
+We use Numpy.Matrix for performance. The class needs to be initialized in order to inform the user that some
+code might take some time - no exception handling here only for multiple-inits.
 """
-
-
 class LinearAlgebra:
     def __init__(self, iP, dC):
+        # basic parameters
         self.initialParameters = iP
         self.derivedConstants = dC
         # first, not initialized to save time. besides that,
         # these are the checking values if already initialized.
+        # but there are no control mechanisms.
         self.logDerivationMatrixOne = None
         self.logDerivationMatrixTwo = None
 
     # ======== init methods ========
+
+    """ Initialization of logarithmic matrix of order 1.
+    """
     def initLDMOne(self):
         if self.logDerivationMatrixOne == None:
             self.logDerivationMatrixOne\
-                = self.__logDerivationMatrix(self.initialParameters.number, 1)
+                = self.__logDerivationMatrix(self.initialParameters.number, 1) # use method with correct input.
         else:
             raise BaseException("logDerivationMatrix of order=1 already initialized")
 
+    """ Initialization of logarithmic matrix of order 2.
+    """
     def initLDMTwo(self):
         if self.logDerivationMatrixTwo == None:
             self.logDerivationMatrixTwo\
-                = self.__logDerivationMatrix(self.initialParameters.number, 2)
+                = self.__logDerivationMatrix(self.initialParameters.number, 2) # use method with correct input.
         else:
             raise BaseException("logDerivationMatrix of order=2 already initialized")
 
     """ For a given dimension size N, returns the logarithmic derivation matrices
     of order one and two: the discretized version of d/dlog(r).
+    used to get d/dr and (d/dr)^2, derivation see page 973, B3a and B3b.
     """
     def __logDerivationMatrix(self, dimension, order):
+        # TODO: matts method as replacement because faster.
         # first, create a numpy.array with all the numbers and
         # then, just convert it to numpy.matrix. therefore, create
         # a two dimensional list.
@@ -109,20 +128,3 @@ class LinearAlgebra:
                 row.append(0)
             res.append(row)
         return prefactor * np.matrix(res)
-
-
-    # todo: i am not sure if we should keep this
-    # problem is: it depends on r so the advantage of
-    # matrix operation's gone!
-    """ In order to get d/dr, d/dlog(r) will be used.
-    """
-    def derivationMatrix(self, order, r):
-        if (self.logDerivationMatrixOne == None) or (self.logDerivationMatrixTwo==None):
-            raise BaseException("not fully initialized yet")
-        if order == 1:
-            return 1 / float(r) * self.logDerivationMatrixOne
-        elif order == 2:
-            return (1 / float(r)) ** 2 * self.logDerivationMatrixTwo \
-                   - (1 / float(r)) ** 2 * self.logDerivationMatrixOne
-        else:
-            raise BaseException("order must be 1 or 2")
