@@ -7,7 +7,7 @@ from Utils import RadialCells
 """
 class InitialParameters(object):
     def __init__(self, number=500, rStar=10 ** 11, rDisk=10 ** 15, p=1, q=5 / 8, mStar=10 ** 33, mDisk=10 ** 33,
-                 a0Star=10**6, m=1):
+                 a0Star=10**6, m=1, eta=0.1):
         # do the assignments
         self.number = number
         self.rStar = rStar
@@ -19,6 +19,7 @@ class InitialParameters(object):
         self.a0Star = a0Star
         self.G = 6.67384 * 10 ** (-11)
         self.m = m
+        self.eta = eta
 
     """ toString representation.
     """
@@ -28,7 +29,8 @@ class InitialParameters(object):
                + "\n(mStar,mDisk): " + str((self.mStar, self.mDisk)) \
                + "\n(p,q): " + str((self.p, self.q)) \
                + "\na0Star: " + str(self.a0Star) \
-               + "\nm: " + str(self.m)
+               + "\nm: " + str(self.m) \
+               + "\neta: " + str(self.eta)
 
 
 """ Class for calculating all the derived constants out there. Based on the initial constants.
