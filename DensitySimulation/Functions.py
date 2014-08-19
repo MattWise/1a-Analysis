@@ -1,10 +1,14 @@
 from __future__ import division
 
 import math as m
+
 import numpy as np
 from numpy.lib.scimath import sqrt
-import Utils as U
-import cmath as cm
+from scipy import constants
+from scipy.integrate import dblquad
+
+import LinAl as LA
+
 
 """ This class contains the functions we have in analytical form. Contains non-static methods only because
 of dependency on the initial parameters.
@@ -48,7 +52,7 @@ class DiscreteFunctions(object):
         # by manipulating this field, the user could use a different
         # linAlg implementation because there is nothing like an defined
         # interface
-        self.linAlg = U.LinearAlgebra(self.iP, self. dC)
+        self.linAlg = LA.LinearAlgebra(self.iP, self. dC)
         self.linAlg.initLDMOne()
         self.linAlg.initLDMTwo()
         # the former analytic functions: will be numpy arrays
@@ -89,8 +93,47 @@ class DiscreteFunctions(object):
     definition page 962, 5a and page 972, A1-A5.
     """
     def calcOmega(self):
-        # todo: dummy version
-        return np.ones(self.iP.number)
+	#returns discretized capital omega as one dimensional numpy array. See appendix A.
+
+		def omega_continuous(r):
+			# create continuous function of r to feed through discretizer.
+			#Actually equal to r*Omega^2
+
+			def omega_star(r):
+				#Equation A2 solved for omega star. Modified to use softened gravity.
+				return (constants.G*self.iP.MStar/(r+self.iP.softening_parameter)**3)**.5
+
+			def omega_disk(r):
+				#Equation A3 and A5. Softened gravity used throughout.
+
+				def func(phi,x,r):
+					#integrand from A3 and A5.
+					return (constants.G*self.analyticFunctions.sigma_0(r*x)*x)/(1+(x**2)-2*x*m.cos(phi)+self.iP.softening_parameter**2)**-.5
+
+				def upper_bound(x):
+					return float(2*m.pi)
+				def lower_bound(x):
+					return float(0)
+
+				return r*(dblquad(func,self.iP.RStar/r,self.iP.RDisk/r,lower_bound,upper_bound,args=(r,))[0])
+
+			def omega_pressure(r):
+				#Equation A4
+				A=(self.analyticFunctions.a0(r)**2)/self.analyticFunctions.sigma_0(r) #a_0^2/sigma_0 term
+				B=(-self.iP.p*self.dC.sigmaStar*self.iP.RStar**self.iP.p)/r**(self.iP.p+1) #d sigma_0/dr term
+				C=(A*B/r)**.5 #solve for omega_P
+				return C
+
+
+			return omega_star(r)+omega_disk(r)+omega_pressure(r)
+
+		def divide_by_r(array):
+			#divides through by r, yielding discretized omega^2
+			for index,value in enumerate(self.dC.radial_cells.RList):
+				array[index]=array[index]/value
+
+		return np.sqrt(divide_by_r(-1*self.linAlg.firstDerivative(self.discretizer(omega_continuous))))
+
 
     """ calculates the set of values for the kappa function. uses the
     derivative matrices to form d/dr.
