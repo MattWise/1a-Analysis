@@ -173,4 +173,5 @@ diF.initOmega()
 diF.initKappa()
 
 print diF.kappa
+print "hi"
 
