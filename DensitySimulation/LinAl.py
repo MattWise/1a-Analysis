@@ -19,9 +19,8 @@ class LinearAlgebraFunctions(object):
 		# but there are no control mechanisms.
 		self.logDerivationMatrixOne = None
 		self.logDerivationMatrixTwo = None
-		# integration matrix for J
-		# todo: unclear if this is the way to go
-		self.I = None
+		# J_ij matrix which performs an integral
+		self.JMatrix = None
 
 	# ======== init methods ========
 
@@ -31,7 +30,6 @@ class LinearAlgebraFunctions(object):
 		if self.logDerivationMatrixOne == None:
 			self.logDerivationMatrixOne\
 				= self.__logDerivationMatrix(self.initialParameters.number, 1) # use method with correct input.
-			self.I = np.linalg.inv(self.logDerivationMatrixOne)
 		else:
 			raise BaseException("logDerivationMatrix of order=1 already initialized")
 
@@ -43,6 +41,14 @@ class LinearAlgebraFunctions(object):
 				= self.__logDerivationMatrix(self.initialParameters.number, 2) # use method with correct input.
 		else:
 			raise BaseException("logDerivationMatrix of order=2 already initialized")
+
+	""" Initialization of J_ij matrix.
+	"""
+	def initJMatrix(self):
+		if self.JMatrix == None:
+			self.JMatrix = self.__calcJMatrix()
+		else:
+			raise BaseException("JMatrix already initialized")
 
 	""" For a given dimension size N, returns the logarithmic derivation matrices
 	of order one and two: the discretized version of d/dlog(r).
@@ -121,12 +127,37 @@ class LinearAlgebraFunctions(object):
 			res[index]=res[index]/(value**2)
 		return res
 
-	# todo: not sure if something to keep
-	def integrate(self,vector):
-		#Not right! Missing some factor, like the (1/r) in the first derivative.
-		return np.dot(self.I,vector)
+	""" Performs the actual J_ij matrix calculation. Since an 2d array: O(dimension^2). Actually,
+	this matrix is only dependent on the r cell values.
+	"""
+	def __calcJMatrix(self):
+		# get dimension
+		dimension = self.initialParameters.number
+		p = self.initialParameters.p
+		printed = -5
+		# get the radCells
+		radCellsValues = self.derivedConstants.radialCells.rValues
+		# creating the result of correct dimension filled with zeros
+		result = np.zeros((dimension, dimension))
+		# filling the matrix with correct values according to my calculations
+		# todo: maybe parallel! would be a nice task :-)
+		for i in np.arange(dimension):
+			for j in np.arange(1, dimension-1):
+				result[i][j] = (radCellsValues[j+1]-radCellsValues[j])/(2*radCellsValues[i])\
+							   *(radCellsValues[j]/radCellsValues[i])**(2-p)\
+							   + (radCellsValues[j]-radCellsValues[j-1])/(2*radCellsValues[i])\
+								 *(radCellsValues[j]/radCellsValues[i])**(2-p)
+			result[i][0] = (radCellsValues[1]-radCellsValues[0])/(2*radCellsValues[i])\
+						   *(radCellsValues[0]/radCellsValues[i])**(2-p)
+			result[i][dimension-1] = (radCellsValues[dimension-1]-radCellsValues[dimension-2])/(2*radCellsValues[i])\
+						   *(radCellsValues[dimension-1]/radCellsValues[i])**(2-p)
+			# some simple feedback
+			percentage = round(100*(i/dimension), 0)
+			if percentage%5==0 and not (percentage==printed):
+				print "completed:", percentage, "%"
+				printed = percentage
 
-	# todo: I'd like to have a matrix called J for convenient access.
+		return result
 
 
 """ This class represents the huge matrix generated in order to solve the omega eigenvalue and
@@ -135,3 +166,27 @@ Due to heavy computing, needs to be initialized as well.
 """
 class WMatrix(object):
 	pass
+
+
+
+"""
+
+# =================== TESTING AREA ===================
+
+import Params as P
+
+iP = P.InitialParameters(number=5000)
+dC = P.DerivedConstants(iP)
+
+la = LinearAlgebraFunctions(iP, dC)
+timeStart1 = t.clock()
+la.initLDMOne()
+la.initLDMTwo()
+timeEnd1 = t.clock()
+print "done1: took me [s]:", str(timeEnd1-timeStart1)
+timeStart2 = t.clock()
+la.initJMatrix()
+timeEnd2 = t.clock()
+print "done2: took me [s]:", str(timeEnd2-timeStart2)
+
+"""
