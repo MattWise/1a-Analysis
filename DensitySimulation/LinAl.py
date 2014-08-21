@@ -174,6 +174,15 @@ class WMatrix(object):
 									   or self.dF.sigma0Discrete == None
 									   or self.dF.Omega == None
 									   or self.dF.kappa == None)
+		# access to important fields
+		self.m = self.dF.iP.m
+		self.p = self.dF.iP.p
+		self.q = self.dF.iP.q
+		self.mDisk = self.dF.iP.mDisk
+		self.mStar = self.dF.iP.mStar
+		# todo: replace with scipy constants
+		self.G = 6.67384*10**(-11) # SI
+		self.pi = 3.14
 		# the W composition in powers of omega
 		self.W0 = None
 		self.W1 = None
@@ -262,11 +271,8 @@ class WMatrix(object):
 		return self.W0 + self.W1 + self.W2 + self.W3 + self.W4 + self.W5
 
 	# ==============================
-	# component functions:
-	# see calculations for reason
+	# value functions
 	# ==============================
-
-	# todo: evaluate the kronecker delta by using if -> might be faster!
 
 	def delta(self, i, j):
 		res = None
@@ -287,109 +293,129 @@ class WMatrix(object):
 	def jValue(self, i, j):
 		return self.dF.linAlg.JMatrix[i][j]
 
+	def SigmaValue(self, i):
+		return self.dF.SigmaDiscrete[i]
+
+	def sigma0Value(self, i):
+		return self.dF.sigma0Discrete[i]
+
+	def kappaValue(self, i):
+		return self.dF.kappa[i]
+
+	def OmegaValue(self, i):
+		return self.dF.Omega[i]
+
+	# einstein sum
 	def einsum(self, function1, function2, i, k):
 		res = 0.0
 		for j in np.arange(self.dF.iP.number):
 			res += function1(i, j) * function2(j, k)
 		return res
 
+
+	# ======================================
+	# component functions:
+	# see calculations for further detail
+	# ======================================
+	# todo: evaluate the kronecker delta by using if -> might be faster!
+
 	def fA0(self, i, k):
-		Sigma = self.dF.SigmaDiscrete
-		p, q = self.dF.iP.p, self.dF.iP.q
 		summand1 = self.rValue(i) * self.einsum(self.d1Value, self.jValue, i, k)
-		summand2 = self.d1Value(i, k)/(Sigma[i])
-		summand3 = - q*self.delta(i, k)/(Sigma[i])
-		summand4 = self.rValue(i)*(1-p)*self.einsum(self.delta, self.jValue, i, k)
+		summand2 = self.d1Value(i, k)/(self.sigma0Value(i))
+		summand3 = - self.q*self.delta(i, k)/(self.sigma0Value(i))
+		summand4 = self.rValue(i)*(1-self.p)*self.einsum(self.delta, self.jValue, i, k)
 		return summand1 + summand2 + summand3 + summand4
 
 	def fA2(self,i, k):
-		# constants
-		m = self.dF.iP.m
-		# todo: change to scipy constant
-		G  = 6.67384*10**(-11) # in SI
-		mStar = self.dF.iP.mStar
-		mDisk = self.dF.iP.mDisk
-		return self.delta(1, m) * self.rValue(i)**4/2*(self.jValue(i, k))/(G*(mStar+mDisk))
+		return self.delta(1, self.m) * self.rValue(i)**4/2\
+		       *(self.jValue(i, k))/(self.G*(self.mStar+self.mDisk))
 
 	def fB0(self, i, k):
-		Sigma = self.dF.SigmaDiscrete
 		summand1 = self.rValue(i)**2*self.einsum(self.delta, self.jValue, i, k)
-		summand2 = self.rValue(i)*self.delta(i, k)/(Sigma[i])
+		summand2 = self.rValue(i)*self.delta(i, k)/(self.SigmaValue(i))
 		return summand1 + summand2
 
 	def fB2(self, i, k):
-		# constants
-		m = self.dF.iP.m
-		# todo: change to scipy constant
-		G  = 6.67384*10**(-11) # in SI
-		mStar = self.dF.iP.mStar
-		mDisk = self.dF.iP.mDisk
-		return self.delta(1, m) * self.rValue(i)**5/2*(self.jValue(i, k))/(G*(mStar+mDisk))
+		return self.delta(1, self.m) * self.rValue(i)**5/2\
+		       *(self.jValue(i, k))/(self.G*(self.mStar+self.mDisk))
 
-	def x0(self):
+	def x0(self, i, k):
 		pass
 
-	def x1(self):
+	def x1(self, i, k):
 		pass
 
-	def x2(self):
+	def x2(self, i, k):
 		pass
 
-	def x3(self):
+	def x3(self, i, k):
 		pass
 
-	def y0(self):
+	def y0(self, i, k):
 		pass
 
-	def y1(self):
+	def y1(self, i, k):
 		pass
 
-	def y2(self):
+	def y2(self, i, k):
 		pass
 
-	def y3(self):
+	def y3(self, i, k):
 		pass
 
 	def f1(self, i, k):
-		Sigma = self.dF.SigmaDiscrete
-		p, q = self.dF.iP.p, self.dF.iP.q
 		summand1 = self.einsum(self.d2Value, self.jValue, i, k)
-		summand2 = 2*(1-p)*self.einsum(self.d1Value, self.jValue, i, k)
+		summand2 = 2*(1-self.p)*self.einsum(self.d1Value, self.jValue, i, k)
 		summand3 = - self.einsum(self.d1Value, self.jValue, i, k)
-		summand4 = p*(p-1)*self.einsum(self.delta, self.jValue, i, k)
-		return summand1 + summand2 + summand3 + summand4
+		summand4 = self.p*(self.p-1)*self.einsum(self.delta, self.jValue, i, k)
+		summand5 = self.d2Value(i, k)/(self.rValue(i)*self.sigma0Value(i))
+		summand6 = - 2*self.q*self.d1Value(i, k)/(self.rValue(i)*self.sigma0Value(i))
+		summand7 = - self.d1Value(i, k)/(self.rValue(i)*self.sigma0Value(i))
+		summand8 = self.q*(self.q+1)*self.delta(i, k)/(self.rValue(i)*self.sigma0Value(i))
+		return summand1 \
+		       + summand2 \
+		       + summand3 \
+		       + summand4 \
+		       + summand5 \
+		       + summand6 \
+		       + summand7 \
+		       + summand8
 
-	def f2(self):
+	def f2(self, i, k):
+		return - (self.kappaValue(i)**2*self.rValue(i)*self.delta(i, k))/(2*self.pi*self.G*self.sigma0Value(i))
+
+	def b0(self, i, k):
+		summand1 = - self.m * self.OmegaValue(i)*self.kappaValue(i)**2
+		summand2 = self.m**3 * self.OmegaValue(i)**3
+		return summand1 + summand2
+
+	def b1(self, i, k):
+		summand1 = self.kappaValue(i)**2
+		summand2 = - 3 * self.m**2*self.OmegaValue(i)**2
+		return summand1 + summand2
+
+	def b2(self, i, k):
 		pass
 
-	def b0(self):
+	def b3(self, i, k):
 		pass
 
-	def b1(self):
+	def c0(self, i, k):
 		pass
 
-	def b2(self):
+	def c1(self, i, k):
 		pass
 
-	def b3(self):
+	def c2(self, i, k):
 		pass
 
-	def c0(self):
+	def c3(self, i, k):
 		pass
 
-	def c1(self):
+	def c4(self, i, k):
 		pass
 
-	def c2(self):
-		pass
-
-	def c3(self):
-		pass
-
-	def c4(self):
-		pass
-
-	def c5(self):
+	def c5(self, i, k):
 		pass
 
 """
