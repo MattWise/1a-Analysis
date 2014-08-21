@@ -1,8 +1,7 @@
 from __future__ import division
 
 import numpy as np
-import time as t
-import math as m
+from scipy.constants import pi, G
 
 """ This class holds all the matrices needed for numerical derivatives and integration. Since matrix creation is
 quite intense in time and power, we use a non-static class here in order to store the calculated matrices.
@@ -141,6 +140,7 @@ class LinearAlgebraFunctions(object):
 		result = np.zeros((dimension, dimension))
 		# filling the matrix with correct values according to my calculations
 		# todo: maybe parallel! would be a nice task :-)
+		print "-> begin building J matrix"
 		for i in np.arange(dimension):
 			for j in np.arange(1, dimension-1):
 				result[i][j] = (radCellsValues[j+1]-radCellsValues[j])/(2*radCellsValues[i])\
@@ -154,7 +154,7 @@ class LinearAlgebraFunctions(object):
 			# some simple feedback
 			percentage = round(100*(i/dimension), 0)
 			if percentage%5==0 and not (percentage==printed):
-				print "completed:", percentage, "%"
+				print "--> completed:", percentage, "%"
 				printed = percentage
 
 		return result
@@ -180,10 +180,7 @@ class WMatrix(object):
 		self.q = self.dF.iP.q
 		self.mDisk = self.dF.iP.mDisk
 		self.mStar = self.dF.iP.mStar
-		self.number = self.dF.iP.number
-		# todo: replace with scipy constants
-		self.G = 6.67384*10**(-11) # SI
-		self.pi = 3.14
+		self.number = self.dF.iP.number		
 		# the W composition in powers of omega
 		self.W0 = None
 		self.W1 = None
@@ -359,7 +356,7 @@ class WMatrix(object):
 
 	def fA2(self,i, k):
 		return self.delta(1, self.m) * self.rValue(i)**4/2\
-		       *(self.jValue(i, k))/(self.G*(self.mStar+self.mDisk))
+		       *(self.jValue(i, k))/(G*(self.mStar+self.mDisk))
 
 	def fB0(self, i, k):
 		summand1 = self.rValue(i)**2*self.einsum(self.delta, self.jValue, i, k)
@@ -368,7 +365,7 @@ class WMatrix(object):
 
 	def fB2(self, i, k):
 		return self.delta(1, self.m) * self.rValue(i)**5/2\
-		       *(self.jValue(i, k))/(self.G*(self.mStar+self.mDisk))
+		       *(self.jValue(i, k))/(G*(self.mStar+self.mDisk))
 
 	def x0(self, i, k):
 		denominator=self.rValue(i)*self.kappaValue(i)**3*self.sigma0Value(i)
@@ -444,7 +441,7 @@ class WMatrix(object):
 		       + summand8
 
 	def f2(self, i, k):
-		return - (self.kappaValue(i)**2*self.rValue(i)*self.delta(i, k))/(2*self.pi*self.G*self.sigma0Value(i))
+		return - (self.kappaValue(i)**2*self.rValue(i)*self.delta(i, k))/(2*pi*G*self.sigma0Value(i))
 
 	def b0(self, i, k):
 		summand1 = - self.m * self.OmegaValue(i)*self.kappaValue(i)**2
@@ -513,7 +510,7 @@ class WMatrix(object):
 			summand5 = self.m*self.OmegaValue(i)*self.q*self.delta(i, k)/(self.SigmaValue(i)*self.rValue(i))
 			summand6 = -2*self.m*self.OmegaValue(i)*self.delta(i, k)/(self.SigmaValue(i)*self.rValue(i))
 			summand7 = - self.rValue(i)*self.delta(i, k)*self.m\
-			           *self.OmegaValue(i)/(2*self.pi*self.G*self.sigma0Value(i)*self.p)\
+			           *self.OmegaValue(i)/(2*pi*G*self.sigma0Value(i)*self.p)\
 			           *(self.kappaValue(i)**2-self.m**2*self.OmegaValue(i)**2)
 			return summand1 + summand2 + summand3
 			+ summand4 + summand5 + summand6 + summand7
@@ -537,9 +534,9 @@ class WMatrix(object):
 			summand3 = self.d1Value(i, k)/(self.SigmaValue(i)*self.rValue(i))
 			summand4 = - self.q * self.delta(i, k)/(self.SigmaValue(i)*self.rValue(i))
 			summand5 = self.rValue(i)*self.delta(i, k)\
-			           *(self.kappaValue(i)**2-self.m**2*self.OmegaValue(i)**2)/(2*self.pi*self.G*self.p*self.sigma0Value(i))
+			           *(self.kappaValue(i)**2-self.m**2*self.OmegaValue(i)**2)/(2*pi*G*self.p*self.sigma0Value(i))
 			summand6 = - self.rValue(i)*self.delta(i, k) \
-			           * self.m**2*self.OmegaValue(i)**2/(2*self.pi*self.G*self.sigma0Value(i)*self.p)
+			           * self.m**2*self.OmegaValue(i)**2/(2*pi*G*self.sigma0Value(i)*self.p)
 			return summand1 + summand2 + summand3 + summand4 + summand5 + summand6
 		else:
 			summand1 = self.fA0(i, k) * self.x1(i, k)
@@ -551,14 +548,14 @@ class WMatrix(object):
 	def calcW2_ik(self, i, k):
 		if i==0:
 			return - self.delta(1, self.m) *3/2*self.OmegaValue(i)*self.rValue(i)**3\
-			       *self.jValue(i, k)/(self.G*(self.mStar+self.mDisk))
+			       *self.jValue(i, k)/(G*(self.mStar+self.mDisk))
 		elif i==self.number-1:
 			summand1 = -self.delta(1, self.m)*3*self.OmegaValue(i)*self.rValue(i)**3\
-			           *self.jValue(i, k)/(2*self.G*(self.mStar+self.mDisk))
+			           *self.jValue(i, k)/(2*G*(self.mStar+self.mDisk))
 			summand2 = - self.m * self.OmegaValue(i) * self.rValue(i) * (-1) \
-			           * self.delta(i, k)/(2*self.pi*self.G*self.p*self.sigma0Value(i))
+			           * self.delta(i, k)/(2*pi*G*self.p*self.sigma0Value(i))
 			summand3 = self.rValue(i)*self.delta(i, k)*2*self.m*self.OmegaValue(i)\
-			           /(2*self.pi*self.G*self.p*self.sigma0Value(i))
+			           /(2*pi*G*self.p*self.sigma0Value(i))
 			return summand1 + summand2 + summand3
 		else:
 			summand1 = self.fA0(i, k)
@@ -571,10 +568,10 @@ class WMatrix(object):
 
 	def calcW3_ik(self, i, k):
 		if i==0:
-			return self.delta(1, self.m)*self.rValue(i)**3*self.jValue(i, k)/(2*self.G*(self.mStar + self.mDisk))
+			return self.delta(1, self.m)*self.rValue(i)**3*self.jValue(i, k)/(2*G*(self.mStar + self.mDisk))
 		elif i==self.number-1:
-			summand1 = (self.delta(1, self.m)*self.rValue(i)**3*self.jValue(i, j))/(2*self.G*(self.mStar+self.mDisk))
-			summand2 = (self.rValue(i)*self.delta(i, k)*(-1))/(2*self.pi*self.G*self.sigma0Value(i)*self.p)
+			summand1 = (self.delta(1, self.m)*self.rValue(i)**3*self.jValue(i, j))/(2*G*(self.mStar+self.mDisk))
+			summand2 = (self.rValue(i)*self.delta(i, k)*(-1))/(2*pi*G*self.sigma0Value(i)*self.p)
 			return summand1 + summand2
 		else:
 			summand1 = self.fA2(i, k) * self.x1(i, k)

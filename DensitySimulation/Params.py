@@ -80,9 +80,9 @@ class DerivedConstants(object):
 
 		# simple toString method for proper debug and information
 		def __str__(self):
-			return "number: " + str(self.number) + "\n" \
-				   + "rStar: " + str(self.rStar) + "\n" \
-				   + "rDisk: " + str(self.rDisk)
+			return "[number: " + str(self.number) + " -- " \
+				   + "rStar: " + str(self.rStar) + " -- " \
+				   + "rDisk: " + str(self.rDisk) + "]"
 
 	""" toString representation.
 	"""
@@ -90,7 +90,8 @@ class DerivedConstants(object):
 		return "n: " + str(self.n) + "\n" \
 			   + "sigmaStar: " + str(self.sigmaStar) + "\n" \
 			   + "omegaStar: " + str(self.omegaStar) + "\n" \
-			   + "qStar: " + str(self.qStar)
+			   + "qStar: " + str(self.qStar) + "\n" \
+			   + "radialCells: " + str(self.radialCells)
 
 	""" sigmaStar constant for analytic form of sigma0. definition page 964, 23a and 23b.
 	"""
