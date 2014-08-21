@@ -180,6 +180,7 @@ class WMatrix(object):
 		self.q = self.dF.iP.q
 		self.mDisk = self.dF.iP.mDisk
 		self.mStar = self.dF.iP.mStar
+		self.number = self.dF.iP.number
 		# todo: replace with scipy constants
 		self.G = 6.67384*10**(-11) # SI
 		self.pi = 3.14
@@ -250,22 +251,40 @@ class WMatrix(object):
 	# ======================
 
 	def __calcW0(self):
-		pass
+		res = np.zeros((self.number, self.number))
+		for i in np.arange(self.number):
+			for k in np.arange(self.number):
+				res[i][k] = self.calcW0_ik(i, k)
 
 	def __calcW1(self):
-		pass
+		res = np.zeros((self.number, self.number))
+		for i in np.arange(self.number):
+			for k in np.arange(self.number):
+				res[i][k] = self.calcW1_ik(i, k)
 
 	def __calcW2(self):
-		pass
+		res = np.zeros((self.number, self.number))
+		for i in np.arange(self.number):
+			for k in np.arange(self.number):
+				res[i][k] = self.calcW2_ik(i, k)
 
 	def __calcW3(self):
-		pass
+		res = np.zeros((self.number, self.number))
+		for i in np.arange(self.number):
+			for k in np.arange(self.number):
+				res[i][k] = self.calcW3_ik(i, k)
 
 	def __calcW4(self):
-		pass
+		res = np.zeros((self.number, self.number))
+		for i in np.arange(self.number):
+			for k in np.arange(self.number):
+				res[i][k] = self.calcW4_ik(i, k)
 
 	def __calcW5(self):
-		pass
+		res = np.zeros((self.number, self.number))
+		for i in np.arange(self.number):
+			for k in np.arange(self.number):
+				res[i][k] = self.calcW5_ik(i, k)
 
 	def __calcW(self):
 		return self.W0 + self.W1 + self.W2 + self.W3 + self.W4 + self.W5
@@ -438,28 +457,155 @@ class WMatrix(object):
 		return summand1 + summand2
 
 	def b2(self, i, k):
-		pass
+		return 3 * self.m * self.OmegaValue(i)
 
 	def b3(self, i, k):
-		pass
+		return -1
 
 	def c0(self, i, k):
-		pass
+		summand1 = 2 * self.m**3 * self.kappaValue(i)**2 * self.OmegaValue(i)**3
+		summand2 = - self.m**5 * self.OmegaValue(i)**5
+		summand3 = - self.m * self.kappaValue(i)**4 * self.OmegaValue(i)
+		return summand1 + summand2 + summand3
 
 	def c1(self, i, k):
-		pass
+		summand1 = self.kappaValue(i)**4
+		summand2 = - 6 * self.m**2 * self.kappaValue(i)**2 * self.OmegaValue(i)**2
+		summand3 = 5 * self.m**4 * self.OmegaValue(i)**4
+		return summand1 + summand2 + summand3
 
 	def c2(self, i, k):
-		pass
+		summand1 = 6 * self.m * self.OmegaValue(i) * self.kappaValue(i)**2
+		summand2 = 10 * self.m**3 * self.OmegaValue(i)**3
+		return summand1 + summand2
 
 	def c3(self, i, k):
-		pass
+		summand1 = 2 * self.kappaValue(i)**2
+		summand2 = - 2 * 5 * self.m**2 * self.OmegaValue(i)**2
+		return summand1 + summand2
 
 	def c4(self, i, k):
-		pass
+		return - 5 * self.m * self.OmegaValue(i)
 
 	def c5(self, i, k):
-		pass
+		return 1
+
+
+	# ===========================================
+	# functions for calculating W^(x)_ik element
+	# ===========================================
+
+	def calcW0_ik(self, i, k):
+		if i==0:
+			summand1 = -self.m*self.OmegaValue(i)*self.einsum(self.d1Value, self.jValue, i, k)
+			summand2 = -self.m*self.OmegaValue(i)*(1-self.p)*self.einsum(self.delta, self.jValue, i, k)
+			summand3 = -2*self.m*self.OmegaValue(i)*self.einsum(self.delta, self.jValue, i, k)
+			summand4 = -self.m*self.OmegaValue(i)*self.d1Value(i, k)/(self.SigmaValue(i)*self.rValue(i))
+			summand5 = self.m*self.OmegaValue(i)*self.q*self.delta(i, k)/(self.SigmaValue(i)*self.rValue(i))
+			summand6 = -2*self.m*self.OmegaValue(i)*self.delta(i, k)/(self.SigmaValue(i)*self.rValue(i))
+			return summand1 + summand2 + summand3
+			+ summand4 + summand5 + summand6
+		elif i==self.number-1:
+			summand1 = -self.m*self.OmegaValue(i)*self.einsum(self.d1Value, self.jValue, i, k)
+			summand2 = -self.m*self.OmegaValue(i)*(1-self.p)*self.einsum(self.delta, self.jValue, i, k)
+			summand3 = -2*self.m*self.OmegaValue(i)*self.einsum(self.delta, self.jValue, i, k)
+			summand4 = -self.m*self.OmegaValue(i)*self.d1Value(i, k)/(self.SigmaValue(i)*self.rValue(i))
+			summand5 = self.m*self.OmegaValue(i)*self.q*self.delta(i, k)/(self.SigmaValue(i)*self.rValue(i))
+			summand6 = -2*self.m*self.OmegaValue(i)*self.delta(i, k)/(self.SigmaValue(i)*self.rValue(i))
+			summand7 = - self.rValue(i)*self.delta(i, k)*self.m\
+			           *self.OmegaValue(i)/(2*self.pi*self.G*self.sigma0Value(i)*self.p)\
+			           *(self.kappaValue(i)**2-self.m**2*self.OmegaValue(i)**2)
+			return summand1 + summand2 + summand3
+			+ summand4 + summand5 + summand6 + summand7
+		else:
+			summand1 = self.fA0(i, k) * (self.x0(i, k) + self.x2(i, k))
+			summand2 = self.fB0(i, k) * (self.y0(i, k) + self.y2(i, k))
+			summand3 = (self.c0(i, k) * self.f2(i, k))/(self.kappaValue(i)**5)
+			summand4 = (self.b0(i, k) * self.f1(i, k))/(self.kappaValue(i)**3)
+			return summand1 + summand2 + summand3 + summand4
+
+	def calcW1_ik(self, i, k):
+		if i==0:
+			summand1 = self.einsum(self.d1Value, self.jValue, i, k)
+			summand2 = (1-self.p)*self.einsum(self.delta, self.jValue, i, k)
+			summand3 = - self.delta(i, k) * self.q/(self.SigmaValue(i)*self.rValue(i))
+			summand4 = self.d1Value(i, k)/(self.SigmaValue(i)*self.rValue(i))
+			return summand1 + summand2 + summand3 + summand4
+		elif i==self.number-1:
+			summand1 = self.einsum(self.d1Value, self.jValue, i, k)
+			summand2 = (1-self.p)*self.einsum(self.delta, self.jValue, i, k)
+			summand3 = self.d1Value(i, k)/(self.SigmaValue(i)*self.rValue(i))
+			summand4 = - self.q * self.delta(i, k)/(self.SigmaValue(i)*self.rValue(i))
+			summand5 = self.rValue(i)*self.delta(i, k)\
+			           *(self.kappaValue(i)**2-self.m**2*self.OmegaValue(i)**2)/(2*self.pi*self.G*self.p*self.sigma0Value(i))
+			summand6 = - self.rValue(i)*self.delta(i, k) \
+			           * self.m**2*self.OmegaValue(i)**2/(2*self.pi*self.G*self.sigma0Value(i)*self.p)
+			return summand1 + summand2 + summand3 + summand4 + summand5 + summand6
+		else:
+			summand1 = self.fA0(i, k) * self.x1(i, k)
+			summand2 = self.fB0(i, k) * self.y1(i, k)
+			summand3 = (self.c1(i, k) * self.f2(i, k))/(self.kappaValue(i)**5)
+			summand4 = (self.b1(i, k) * self.f1(i, k))/(self.kappaValue(i)**3)
+			return summand1 + summand2 + summand3 + summand4
+
+	def calcW2_ik(self, i, k):
+		if i==0:
+			return - self.delta(1, self.m) *3/2*self.OmegaValue(i)*self.rValue(i)**3\
+			       *self.jValue(i, k)/(self.G*(self.mStar+self.mDisk))
+		elif i==self.number-1:
+			summand1 = -self.delta(1, self.m)*3*self.OmegaValue(i)*self.rValue(i)**3\
+			           *self.jValue(i, k)/(2*self.G*(self.mStar+self.mDisk))
+			summand2 = - self.m * self.OmegaValue(i) * self.rValue(i) * (-1) \
+			           * self.delta(i, k)/(2*self.pi*self.G*self.p*self.sigma0Value(i))
+			summand3 = self.rValue(i)*self.delta(i, k)*2*self.m*self.OmegaValue(i)\
+			           /(2*self.pi*self.G*self.p*self.sigma0Value(i))
+			return summand1 + summand2 + summand3
+		else:
+			summand1 = self.fA0(i, k)
+			summand2 = self.fB0(i, k)
+			summand3 = self.fA2(i, k) * (self.x0(i, k) + self.x2(i, k))
+			summand4 = self.fB2(i, k) * (self.y0(i, k) + self.y2(i, k))
+			summand5 = (self.c2(i, k) * self.f2(i, k))/(self.kappaValue(i)**5)
+			summand6 = (self.b2(i, k) * self.f1(i, k))/(self.kappaValue(i)**3)
+			return summand1 + summand2 + summand3 + summand4 + summand5 + summand6
+
+	def calcW3_ik(self, i, k):
+		if i==0:
+			return self.delta(1, self.m)*self.rValue(i)**3*self.jValue(i, k)/(2*self.G*(self.mStar + self.mDisk))
+		elif i==self.number-1:
+			summand1 = (self.delta(1, self.m)*self.rValue(i)**3*self.jValue(i, j))/(2*self.G*(self.mStar+self.mDisk))
+			summand2 = (self.rValue(i)*self.delta(i, k)*(-1))/(2*self.pi*self.G*self.sigma0Value(i)*self.p)
+			return summand1 + summand2
+		else:
+			summand1 = self.fA2(i, k) * self.x1(i, k)
+			summand2 = self.fA0(i, k) * self.x3(i, k)
+			summand3 = self.fB2(i, k) * self.y1(i, k)
+			summand4 = self.fB0(i, k) * self.y3(i, k)
+			summand5 = (self.c3(i, k) * self.f2(i, k))/(self.kappaValue(i)**3)
+			summand6 = (self.b3(i, k) * self.f1(i, k))/(self.kappaValue(i)**3)
+			return summand1 + summand2 + summand3 + summand4 + summand5 + summand6
+
+	def calcW4_ik(self, i, k):
+		if i==0:
+			return 0
+		elif i==self.number-1:
+			return 0
+		else:
+			summand1 = self.fA2(i, k)
+			summand2 = self.fB2(i, k)
+			summand3 = (self.c4(i, k) * self.f2(i, k))/(self.kappaValue(i)**5)
+			return summand1 + summand2 + summand3
+
+	def calcW5_ik(self, i, k):
+		if i==0:
+			return 0
+		elif i==self.number-1:
+			return 0
+		else:
+			summand1 = self.fA2(i, k) * self.x3(i, k)
+			summand2 = self.fB2(i, k) * self.y3(i, k)
+			summand3 = (self.c5(i, k) * self.f2(i, k))/(self.kappaValue(i)**5)
+			return summand1 + summand2 + summand3
 
 """
 
