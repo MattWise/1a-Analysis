@@ -585,7 +585,6 @@ class WMatrix(object):
 			summand6 = (self.b3(i, k) * self.f1(i, k))/(self.kappaValue(i)**3)
 			return summand1 + summand2 + summand3 + summand4 + summand5 + summand6
 
-
 	def calcW4_ik(self, i, k):
 		if i==0:
 			return 0
