@@ -165,9 +165,232 @@ the S eigenvector.
 Due to heavy computing, needs to be initialized as well.
 """
 class WMatrix(object):
-	pass
+	# constructor
+	def __init__(self, discreteFunctions):
+		# input class
+		self.dF = discreteFunctions
+		self.dFfullyInitialized = not (self.dF.a0Discrete == None
+									   or self.dF.SigmaDiscrete == None
+									   or self.dF.sigma0Discrete == None
+									   or self.dF.Omega == None
+									   or self.dF.kappa == None)
+		# the W composition in powers of omega
+		self.W0 = None
+		self.W1 = None
+		self.W2 = None
+		self.W3 = None
+		self.W4 = None
+		self.W5 = None
+		self.W = None
 
+	# ===============
+	# init functions
+	# ===============
 
+	def initW0(self):
+		if self.W0 == None and self.dFfullyInitialized:
+			self.W0 = self.__calcW0()
+		else:
+			raise BaseException("initW0(): already or DiscreteFunctions passed not fully initialized")
+
+	def initW1(self):
+		if self.W1 == None and self.dFfullyInitialized:
+			self.W1 = self.__calcW1()
+		else:
+			raise BaseException("initW1(): already or DiscreteFunctions passed not fully initialized")
+
+	def initW2(self):
+		if self.W2 == None and self.dFfullyInitialized:
+			self.W2 = self.__calcW2()
+		else:
+			raise BaseException("initW2(): already or DiscreteFunctions passed not fully initialized")
+
+	def initW3(self):
+		if self.W3 == None and self.dFfullyInitialized:
+			self.W3 = self.__calcW3()
+		else:
+			raise BaseException("initW3(): already or DiscreteFunctions passed not fully initialized")
+
+	def initW4(self):
+		if self.W4 == None and self.dFfullyInitialized:
+			self.W4 = self.__calcW4()
+		else:
+			raise BaseException("initW4(): already or DiscreteFunctions passed not fully initialized")
+
+	def initW5(self):
+		if self.W5 == None and self.dFfullyInitialized:
+			self.W5 = self.__calcW5()
+		else:
+			raise BaseException("initW5(): already or DiscreteFunctions passed not fully initialized")
+
+	def initW(self):
+		if self.W == None \
+				and not (self.W0 == None
+						 or self.W1 == None
+						 or self.W2 == None
+						 or self.W3 == None
+						 or self.W4 == None
+						 or self.W5 == None)\
+				and self.dFfullyInitialized:
+			self.W = self.__calcW()
+		else:
+			raise BaseException("initW(): already, W# not or DiscreteFunctions passed not fully initialized")
+
+	# ======================
+	# calculating functions
+	# ======================
+
+	def __calcW0(self):
+		pass
+
+	def __calcW1(self):
+		pass
+
+	def __calcW2(self):
+		pass
+
+	def __calcW3(self):
+		pass
+
+	def __calcW4(self):
+		pass
+
+	def __calcW5(self):
+		pass
+
+	def __calcW(self):
+		return self.W0 + self.W1 + self.W2 + self.W3 + self.W4 + self.W5
+
+	# ==============================
+	# component functions:
+	# see calculations for reason
+	# ==============================
+
+	# todo: evaluate the kronecker delta by using if -> might be faster!
+
+	def delta(self, i, j):
+		res = None
+		if i == j: res = 1
+		else: res = 0
+		return res
+
+	def rValue(self, i):
+		rVals = self.dF.dC.radialCells.rValues
+		return rVals[i]
+
+	def d1Value(self, i, j):
+		return self.dF.linAlg.logDerivationMatrixOne[i][j]
+
+	def d2Value(self, i, j):
+		return self.dF.linAlg.logDerivationMatrixTwo[i][j]
+
+	def jValue(self, i, j):
+		return self.dF.linAlg.JMatrix[i][j]
+
+	def einsum(self, function1, function2, i, k):
+		res = 0.0
+		for j in np.arange(self.dF.iP.number):
+			res += function1(i, j) * function2(j, k)
+		return res
+
+	def fA0(self, i, k):
+		Sigma = self.dF.SigmaDiscrete
+		p, q = self.dF.iP.p, self.dF.iP.q
+		summand1 = self.rValue(i) * self.einsum(self.d1Value, self.jValue, i, k)
+		summand2 = self.d1Value(i, k)/(Sigma[i])
+		summand3 = - q*self.delta(i, k)/(Sigma[i])
+		summand4 = self.rValue(i)*(1-p)*self.einsum(self.delta, self.jValue, i, k)
+		return summand1 + summand2 + summand3 + summand4
+
+	def fA2(self,i, k):
+		# constants
+		m = self.dF.iP.m
+		# todo: change to scipy constant
+		G  = 6.67384*10**(-11) # in SI
+		mStar = self.dF.iP.mStar
+		mDisk = self.dF.iP.mDisk
+		return self.delta(1, m) * self.rValue(i)**4/2*(self.jValue(i, k))/(G*(mStar+mDisk))
+
+	def fB0(self, i, k):
+		Sigma = self.dF.SigmaDiscrete
+		summand1 = self.rValue(i)**2*self.einsum(self.delta, self.jValue, i, k)
+		summand2 = self.rValue(i)*self.delta(i, k)/(Sigma[i])
+		return summand1 + summand2
+
+	def fB2(self, i, k):
+		# constants
+		m = self.dF.iP.m
+		# todo: change to scipy constant
+		G  = 6.67384*10**(-11) # in SI
+		mStar = self.dF.iP.mStar
+		mDisk = self.dF.iP.mDisk
+		return self.delta(1, m) * self.rValue(i)**5/2*(self.jValue(i, k))/(G*(mStar+mDisk))
+
+	def x0(self):
+		pass
+
+	def x1(self):
+		pass
+
+	def x2(self):
+		pass
+
+	def x3(self):
+		pass
+
+	def y0(self):
+		pass
+
+	def y1(self):
+		pass
+
+	def y2(self):
+		pass
+
+	def y3(self):
+		pass
+
+	def f1(self, i, k):
+		Sigma = self.dF.SigmaDiscrete
+		p, q = self.dF.iP.p, self.dF.iP.q
+		summand1 = self.einsum(self.d2Value, self.jValue, i, k)
+		summand2 = 2*(1-p)*self.einsum(self.d1Value, self.jValue, i, k)
+		summand3 = - self.einsum(self.d1Value, self.jValue, i, k)
+		summand4 = p*(p-1)*self.einsum(self.delta, self.jValue, i, k)
+		return summand1 + summand2 + summand3 + summand4
+
+	def f2(self):
+		pass
+
+	def b0(self):
+		pass
+
+	def b1(self):
+		pass
+
+	def b2(self):
+		pass
+
+	def b3(self):
+		pass
+
+	def c0(self):
+		pass
+
+	def c1(self):
+		pass
+
+	def c2(self):
+		pass
+
+	def c3(self):
+		pass
+
+	def c4(self):
+		pass
+
+	def c5(self):
+		pass
 
 """
 

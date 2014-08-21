@@ -39,7 +39,8 @@ class AnalyticalFunctions(object):
 functions. Besides that, a - also public available - discretizer is available based on the given initial parameters.
 A discrete function will always return the whole set of values in a numpy array (due to performance reasons not
 a list). thus, they need to be created and initialized what will not be done when created because it is a
-time and computing intense action.
+time and computing intense action. there is a init() method available which calls all the init methods in order to have
+a user-convenient way. but nevertheless, all the init methods can be called separately if needed.
 Besides that, there's a method for return the j-th component for a given discretized function - just for convenience.
 """
 class DiscreteFunctions(object):
@@ -55,6 +56,7 @@ class DiscreteFunctions(object):
 		self.linAlg = LA.LinearAlgebraFunctions(self.iP, self. dC)
 		self.linAlg.initLDMOne()
 		self.linAlg.initLDMTwo()
+		self.linAlg.initJMatrix()       # todo: better solution here!
 		# the former analytic functions: will be numpy arrays
 		self.a0Discrete = None
 		self.SigmaDiscrete = None
@@ -62,14 +64,8 @@ class DiscreteFunctions(object):
 		# the discrete functions right from the beginning
 		self.Omega = None
 		self.kappa = None
-		self.initA0Discrete()
-		self.initSigma0Discrete()
-		self.initOmega()
-		self.initKappa()
-		self.initSigmaDiscrete()
 
 	# =============== discretizing function ===============
-
 	""" for the given function, the set of values in respect to the
 	grid will be returned.
 	"""
@@ -82,7 +78,6 @@ class DiscreteFunctions(object):
 		return res
 
 	# ================ component function =================
-
 	""" for a given set of discrete function values, the j-th
 	component will be returned. for convenience purposes.
 	There is no exception handling regarding index boundaries,
@@ -199,8 +194,15 @@ class DiscreteFunctions(object):
 		else:
 			raise BaseException("kappa already initialized")
 
-
-
+	""" call this function in order to initialize the discrete values for
+	all functions (i.e.: kappa, Omega, sigma0, sigma, a0).
+	"""
+	def init(self):
+		self.initKappa()
+		self.initA0Discrete()
+		self.initOmega()
+		self.initSigma0Discrete()
+		self.initSigmaDiscrete()
 
 
 # ======================== TESTING AREA ========================
