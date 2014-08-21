@@ -61,17 +61,18 @@ class DiscreteFunctions(object):
 		self.linAlg = LA.LinearAlgebraFunctions(self.iP, self. dC)
 		self.linAlg.initLDMOne()
 		self.linAlg.initLDMTwo()
-		self.linAlg.initJMatrix()       # todo: better solution here!
+		self.linAlg.initJMatrix()
 		# the former analytic functions: will be numpy arrays
 		self.a0Discrete = None
 		self.SigmaDiscrete = None
 		self.sigma0Discrete = None
+		self.Dsigma0Disrete = None
 		# the discrete functions right from the beginning
 		self.Omega = None
 		self.DOmega=None
 		self.DDOmega=None
 		self.kappa = None
-		self.Dkappa=None
+		self.Dkappa = None
 
 	# =============== discretizing function ===============
 	""" for the given function, the set of values in respect to the
@@ -126,15 +127,13 @@ class DiscreteFunctions(object):
 
 		return sqrt(-1*self.linAlg.firstDerivative(self.discretizer(omega_continuous)))
 
-	"""
-	Calculates the first derivative of capital omega using numerical differentiation method in ARS. Returns vector with
+	""" Calculates the first derivative of capital omega using numerical differentiation method in ARS. Returns vector with
 	components equaling value at each cell.
 	"""
 	def calcDOmega(self):
 		return self.linAlg.firstDerivative(self.Omega)
 
-	"""
-	Calculates the second derivative of capital omega using numerical differentiation method in ARS. Returns vector with
+	""" Calculates the second derivative of capital omega using numerical differentiation method in ARS. Returns vector with
 	components equaling value at each cell.
 	"""
 	def calcDDOmega(self):
@@ -155,13 +154,14 @@ class DiscreteFunctions(object):
 		# TODO: can kappa be element of complex number?
 		# TODO: bring into line with current derivation method. Use DOmega.
 
-	"""
-	Calculates the first derivative of kappa analytically. As kappa is dependent on omega, which is discrete, the result is also discrete. Returns vector with
+	""" Calculates the first derivative of kappa analytically. As kappa is dependent on omega, which is discrete, the result is also discrete. Returns vector with
 	components equaling value at each cell.
 	"""
 	def calcDKappa(self):
 		def calcDKappaAnalytic(r):
-			return .5*(4*self.Omega(r)**2+2*r*self.Omega(r)*self.DOmega(r))**-.5*(10*self.Omega(r)*self.DOmega(r)+2*r*self.DOmega(r)**2+2*r*self.Omega(r)*self.DDOmega(r))
+			return .5*(4*self.Omega[r]**2+2*r*self.Omega[r]*self.DOmega[r])**\
+			          -.5*(10*self.Omega[r]*self.DOmega[r]+2*r*self.DOmega[r]**2
+			               +2*r*self.Omega[r]*self.DDOmega[r])
 
 		return self.discretizer(calcDKappaAnalytic)
 
@@ -201,8 +201,8 @@ class DiscreteFunctions(object):
 	uses the discretizer acting upon the analytic function.
 	"""
 	def initDSigma0Discrete(self):
-		if self.sigma0Discrete == None:
-			self.sigma0Discrete = self.discretizer(self.analyticFunctions.Dsigma0)
+		if self.Dsigma0Disrete == None:
+			self.Dsigma0Disrete = self.discretizer(self.analyticFunctions.Dsigma0)
 		else:
 			raise BaseException("Dsigma0 already initialized")
 
@@ -251,14 +251,14 @@ class DiscreteFunctions(object):
 	derivation is analytical, but dependence on omega means values are discrete.
 	"""
 	def initDKappa(self):
-		if self.DKappa == None:
-			self.DKappa = self.calcDKappa()
+		if self.Dkappa == None:
+			self.Dkappa = self.calcDKappa()
 		else:
-			raise BaseException("DKappa already initialized")
+			raise BaseException("Dkappa already initialized")
 
 
 
-#======================== Init Function ========================
+# ======================== Init Function ========================
 	""" call this function in order to initialize the discrete values for
 	all functions (i.e.: kappa, Omega, sigma0, sigma, a0).
 	"""
