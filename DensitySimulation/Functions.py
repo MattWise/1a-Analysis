@@ -66,7 +66,7 @@ class DiscreteFunctions(object):
 		self.a0Discrete = None
 		self.SigmaDiscrete = None
 		self.sigma0Discrete = None
-		self.Dsigma0Disrete = None
+		self.Dsigma0Discrete=None
 		# the discrete functions right from the beginning
 		self.Omega = None
 		self.DOmega=None
@@ -144,26 +144,20 @@ class DiscreteFunctions(object):
 	definition page 962, 5b.a
 	"""
 	def calcKappa(self):
-		prefactor = self.dC.radialCells.rValues**(-4.0)
-		toDerive = np.asmatrix(((self.dC.radialCells.rValues**2)*self.Omega)**2).T
-		derived = (np.asarray((self.linAlg.logDerivationMatrixOne * toDerive).T)).reshape([len(prefactor)])
-		squared = (prefactor * derived)
-		return sqrt(squared)
-		# TODO: returns interesting set of values, only boundary conditions differ
-		# even tough 1/r^4!
-		# TODO: can kappa be element of complex number?
-		# TODO: bring into line with current derivation method. Use DOmega.
+		array=np.zeros(self.iP.number)
+		for index,r in enumerate(self.dC.radialCells.rValues):
+			array[index]=4*self.Omega[index]**2+2*r*self.Omega[index]*self.DOmega[index]
+		return sqrt(array)
 
-	""" Calculates the first derivative of kappa analytically. As kappa is dependent on omega, which is discrete, the result is also discrete. Returns vector with
+	"""	Calculates the first derivative of kappa analytically. As kappa is dependent on omega, which is discrete, the result is also discrete. Returns vector with
 	components equaling value at each cell.
 	"""
 	def calcDKappa(self):
-		def calcDKappaAnalytic(r):
-			return .5*(4*self.Omega[r]**2+2*r*self.Omega[r]*self.DOmega[r])**\
-			          -.5*(10*self.Omega[r]*self.DOmega[r]+2*r*self.DOmega[r]**2
-			               +2*r*self.Omega[r]*self.DDOmega[r])
-
-		return self.discretizer(calcDKappaAnalytic)
+		array1=(.5*self.kappa)**-1
+		array2=np.zeros(self.iP.number)
+		for index,r in enumerate(self.dC.radialCells.rValues):
+			array2[index]=10*self.Omega[index]*self.DOmega[index]+2*r*self.DOmega[index]**2+2*r*self.Omega[index]*self.DDOmega[index]
+		return array1*array2
 
 	# ============== init discretized fields ==============
 	""" call this function in order to initialize the discrete values for
@@ -201,8 +195,8 @@ class DiscreteFunctions(object):
 	uses the discretizer acting upon the analytic function.
 	"""
 	def initDSigma0Discrete(self):
-		if self.Dsigma0Disrete == None:
-			self.Dsigma0Disrete = self.discretizer(self.analyticFunctions.Dsigma0)
+		if self.Dsigma0Discrete == None:
+			self.Dsigma0Discrete = self.discretizer(self.analyticFunctions.Dsigma0)
 		else:
 			raise BaseException("Dsigma0 already initialized")
 
