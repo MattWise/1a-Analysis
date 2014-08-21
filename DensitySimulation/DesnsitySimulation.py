@@ -24,6 +24,8 @@ def densitySimulation(number=500, rStar=10 ** 11, rDisk=10 ** 15, p=1, q=5 / 8, 
 	analyticFunctions=Functions.AnalyticalFunctions(initParams,derivedConstants)
 	discreteFunctions=Functions.DiscreteFunctions(analyticFunctions)
 	discreteFunctions.init()
+	print (discreteFunctions.DKappa)
+	#print (discreteFunctions.DKappa)
 
 A=time.clock()
 densitySimulation()
