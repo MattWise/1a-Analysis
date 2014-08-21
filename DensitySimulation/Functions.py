@@ -24,6 +24,11 @@ class AnalyticalFunctions(object):
 	def sigma0(self,r):
 		return self.dC.sigmaStar*(self.iP.rStar/float(r))**self.iP.p
 
+	"""first derivative of surface density sigma0. Calculated analytically.
+	"""
+	def Dsigma0(self,r):
+		return (-self.iP.p*self.dC.sigmaStar*self.iP.rStar**self.iP.p)/(r**(self.iP.p+1))
+
 	""" sound speed in the disk. definition page 964 before 23a in the bulk block of text.
 	"""
 	def a0(self,r):
@@ -79,16 +84,6 @@ class DiscreteFunctions(object):
 		for cellR in self.dC.radialCells.rValues:
 			res = np.append(res, function(cellR))
 		return res
-
-	# ================ component function =================
-	""" for a given set of discrete function values, the j-th
-	component will be returned. for convenience purposes.
-	There is no exception handling regarding index boundaries,
-	so watch out.
-	besides that, here the papers convention of 1-indexing is used.
-	"""
-	def returnComponent(self, setOfDiscreteFunctionValues, jComponent):
-		return setOfDiscreteFunctionValues[jComponent-1]
 
 	# ================ discrete functions =================
 	""" calculates the set of values for the Omega function. It's the
@@ -201,6 +196,16 @@ class DiscreteFunctions(object):
 		else:
 			raise BaseException("sigma0 already initialized")
 
+	"""call this function in order to initialize the discrete values for
+	 the first derivative of sigma0. if already initialized, an error is raised.
+	uses the discretizer acting upon the analytic function.
+	"""
+	def initDSigma0Discrete(self):
+		if self.sigma0Discrete == None:
+			self.sigma0Discrete = self.discretizer(self.analyticFunctions.Dsigma0)
+		else:
+			raise BaseException("Dsigma0 already initialized")
+
 	""" call this function in order to initialize the discrete values for
 	capital Omega. if already initialized, an error is raised.
 	uses the numerical integral method given in the paper.
@@ -259,6 +264,7 @@ class DiscreteFunctions(object):
 	"""
 	def init(self):
 		self.initSigma0Discrete()
+		self.initDSigma0Discrete()
 		self.initA0Discrete()
 		self.initOmega()
 		self.initDOmega()
