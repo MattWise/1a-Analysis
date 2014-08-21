@@ -318,11 +318,23 @@ class WMatrix(object):
 	def sigma0Value(self, i):
 		return self.dF.sigma0Discrete[i]
 
+	def Dsigma0Value(self,i):
+		return self.dF.sigma0Discrete[i]
+
 	def kappaValue(self, i):
 		return self.dF.kappa[i]
 
+	def DKappaValue(self,i):
+		return self.dF.DKappa[1]
+
 	def OmegaValue(self, i):
 		return self.dF.Omega[i]
+
+	def DOmegaValue(self,i):
+		return self.dF.DOmega[i]
+
+	def DDOmegaValue(self,i):
+		return self.dF.DDOmega(i)
 
 	# einstein sum
 	def einsum(self, function1, function2, i, k):
@@ -359,28 +371,59 @@ class WMatrix(object):
 		       *(self.jValue(i, k))/(self.G*(self.mStar+self.mDisk))
 
 	def x0(self, i, k):
-		pass
+		denominator=self.rValue(i)*self.kappaValue(i)**3*self.sigma0Value(i)
+		term1=(self.m*self.OmegaValue(i)*(self.sigma0Value(i)+self.rValue(i)*self.Dsigma0Value(i)))
+		term2part1=-self.kappaValue(i)**2+self.m**2*self.OmegaValue(i)**2
+		term2part2=2*self.rValue(i)*self.kappaValue(i)*self.sigma0Value(i)*self.DKappaValue(i)
+		term2part3=-2*self.m**2*self.rValue(i)*self.sigma0Value(i)*self.OmegaValue(i)*self.DOmegaValue(i)
+		return term1*(term2part1+term2part2+term2part3)/denominator
 
 	def x1(self, i, k):
-		pass
+		denominator=self.rValue(i)*self.kappaValue(i)**3*self.sigma0Value(i)
+		term1=self.sigma0Value(i)+self.rValue(i)*self.Dsigma0Value(i)
+		term2part1=self.kappaValue(i)**2-3*self.m**2*self.OmegaValue(i)**2
+		term2part2=-2*self.rValue(i)*self.kappaValue(i)*self.sigma0Value(i)*self.DKappaValue(i)
+		term2part3=-4*self.m**2*self.rValue(i)*self.sigma0Value(i)*self.OmegaValue(i)*self.DOmegaValue(i)
+		return term1*(term2part1+term2part2+term2part3)/denominator
 
 	def x2(self, i, k):
-		pass
+		denominator=self.rValue(i)*self.kappaValue(i)**3*self.sigma0Value(i)
+		term1=(self.sigma0Value(i)+self.rValue(i)*self.Dsigma0Value(i))*self.m
+		term2=3*self.OmegaValue(i)-2*self.rValue(i)*self.sigma0Value(i)*self.DOmegaValue(i)
+		return term1*term2/denominator
 
 	def x3(self, i, k):
-		pass
+		numerator=self.sigma0Value(i)+self.rValue(i)*self.Dsigma0Value(i)
+		denominator=self.rValue(i)*self.kappaValue(i)**3*self.sigma0Value(i)
+		return numerator/denominator
 
 	def y0(self, i, k):
-		pass
+		term1=self.m*self.OmegaValue(i)*(4*self.rValue(i)*self.kappaValue(i)*self.sigma0Value(i)*self.DKappaValue(i))
+		term2part1=self.m*self.OmegaValue(i)*(self.kappaValue(i)-self.m*self.OmegaValue(i))
+		term2part2=self.kappaValue(i)+self.m*self.OmegaValue(i)
+		term2part3=self.m**2*self.sigma0Value(i)-2*self.rValue(i)*self.Dsigma0Value(i)
+		term3=-2*self.m*self.rValue(i)*self.sigma0Value(i)*self.DOmegaValue(i)*(self.kappaValue(i)**2+self.m**2*self.OmegaValue(i)**2)
+		denominator=self.rValue(i)**2*self.kappaValue(i)**3*self.sigma0Value(i)
+		return term1*(term2part1+term2part2+term2part3)*term3/denominator
 
 	def y1(self, i, k):
-		pass
+		term1=self.m**2
+		term2part1=-self.kappaValue(i)**2*self.sigma0Value(i)
+		term2part2=3*self.m**2*self.sigma0Value(i)*self.OmegaValue(i)**2
+		term2part3=-4*self.rValue(i)*self.OmegaValue(i)**2*self.Dsigma0Value(i)
+		denominator=self.rValue(i)**2*self.kappaValue(i)**3*self.sigma0Value(i)
+		return term1*(term2part1+term2part2+term2part3)/denominator
 
 	def y2(self, i, k):
-		pass
+		term1=-3*self.m**3*self.sigma0Value(i)*self.OmegaValue(i)
+		term2=2*self.m*self.rValue(i)*(self.DOmegaValue(i)*self.sigma0Value(i)+self.Dsigma0Value(i)*self.OmegaValue(i))
+		denominator=self.rValue(i)**2*self.kappaValue(i)**3*self.sigma0Value(i)
+		return (term1+term2)/denominator
 
 	def y3(self, i, k):
-		pass
+		numerator=self.m**2
+		denominator=self.rValue(i)**2*self.kappaValue(i)**3
+		return numerator/denominator
 
 	def f1(self, i, k):
 		summand1 = self.einsum(self.d2Value, self.jValue, i, k)
