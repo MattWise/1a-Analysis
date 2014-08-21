@@ -61,7 +61,10 @@ class DiscreteFunctions(object):
 		self.sigma0Discrete = None
 		# the discrete functions right from the beginning
 		self.Omega = None
+		self.DOmega=None
+		self.DDOmega=None
 		self.kappa = None
+		self.Dkappa=None
 		self.initA0Discrete()
 		self.initSigma0Discrete()
 		self.initOmega()
@@ -133,6 +136,19 @@ class DiscreteFunctions(object):
 
 		return sqrt(-1*self.linAlg.firstDerivative(self.discretizer(omega_continuous)))
 
+	"""
+	Calculates the first derivative of capital omega using numerical differentiation method in ARS. Returns vector with
+	components equaling value at each cell.
+	"""
+	def calcDOmega(self):
+		return self.linAlg.firstDerivative(self.Omega)
+
+	"""
+	Calculates the second derivative of capital omega using numerical differentiation method in ARS. Returns vector with
+	components equaling value at each cell.
+	"""
+	def calcDDOmega(self):
+		return self.linAlg.secondDerivative(self.Omega)
 
 	""" calculates the set of values for the kappa function. uses the
 	derivative matrices to form d/dr.
@@ -147,6 +163,17 @@ class DiscreteFunctions(object):
 		# TODO: returns interesting set of values, only boundary conditions differ
 		# even tough 1/r^4!
 		# TODO: can kappa be element of complex number?
+		# TODO: bring into line with current derivation method. Use DOmega.
+
+	"""
+	Calculates the first derivative of kappa analytically. As kappa is dependent on omega, which is discrete, the result is also discrete. Returns vector with
+	components equaling value at each cell.
+	"""
+	def calcDKappa(self):
+		def calcDKappaAnalytic(r):
+			return .5*(4*self.Omega(r)**2+2*r*self.Omega(r)*self.DOmega(r))**-.5*(10*self.Omega(r)*self.DOmega(r)+2*r*self.DOmega(r)**2+2*r*self.Omega(r)*self.DDOmega(r))
+
+		return self.discretizer(calcDKappaAnalytic)
 
 	# ============== init discretized fields ==============
 	""" call this function in order to initialize the discrete values for
@@ -189,6 +216,26 @@ class DiscreteFunctions(object):
 		else:
 			raise BaseException("Omega already initialized")
 
+	"""call this function in order to initialize the discrete values for
+	the first derivative of capital Omega. if already initialized, an error is raised.
+	uses the numerical integral method given in the paper."""
+
+	def initDOmega(self):
+		if self.DOmega == None:
+			self.DOmega = self.calcDOmega()
+		else:
+			raise BaseException("DOmega already initialized")
+
+	"""call this function in order to initialize the discrete values for
+	the second derivative of capital Omega. if already initialized, an error is raised.
+	uses the numerical integral method given in the paper."""
+
+	def initDDOmega(self):
+		if self.DDOmega == None:
+			self.DDOmega = self.calcDDOmega()
+		else:
+			raise BaseException("DDOmega already initialized")
+
 	""" call this function in order to initialize the discrete values for
 	kappa. if already initialized, an error is raised.
 	matrix operations are used to perform the derivation.
@@ -198,6 +245,16 @@ class DiscreteFunctions(object):
 			self.kappa = self.calcKappa()
 		else:
 			raise BaseException("kappa already initialized")
+
+	""" call this function in order to initialize the discrete values for the first derivative of
+	kappa. if already initialized, an error is raised.
+	derivation is analytical, but dependence on omega means values are discrete.
+	"""
+	def initDKappa(self):
+		if self.DKappa == None:
+			self.DKappa = self.calcDKappa()
+		else:
+			raise BaseException("DKappa already initialized")
 
 
 
