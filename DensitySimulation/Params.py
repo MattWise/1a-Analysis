@@ -2,6 +2,7 @@ from __future__ import division
 
 import math as m
 import numpy as np
+from scipy import constants
 
 """ Representation of a set of initial conditions.
 """
@@ -17,7 +18,6 @@ class InitialParameters(object):
 		self.mStar = mStar
 		self.mDisk = mDisk
 		self.a0Star = a0Star
-		self.G = 6.67384 * 10 ** (-11)
 		self.m = m
 		self.eta = eta
 
@@ -101,12 +101,12 @@ class DerivedConstants(object):
 	""" omegaStar constant for qStar constant. definition page 964, 24.
 	"""
 	def __omStar(self, iP):
-		return m.sqrt(iP.G * iP.mStar / (iP.rStar ** 2))
+		return m.sqrt(constants.G * iP.mStar / (iP.rStar ** 2))
 
 	""" qStar constant. definition page 964, 24.
 	"""
 	def __qStar(self, iP):
-		return (self.omegaStar * iP.a0Star) / (m.pi * iP.G * self.sigmaStar)
+		return (self.omegaStar * iP.a0Star) / (m.pi * constants.G * self.sigmaStar)
 
 	""" creates a representation of the grid in respect to the initial parameter n.
 	"""

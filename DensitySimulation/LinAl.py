@@ -59,7 +59,7 @@ class LinearAlgebraFunctions(object):
 		#creates a differentiation matrix for numerical differentiation. "Order=1" means first derivative, "order=2" means second.
 
 
-		def diagnols(array,a,b,value):
+		def diagonals(array,a,b,value):
 			#goes down diagonal form specified coordinates, setting each to value.
 			if a>b:
 				times = dimension-a-1
@@ -87,8 +87,8 @@ class LinearAlgebraFunctions(object):
 		prefactor = 0
 
 		if order == 1:
-			array = diagnols(array,1,0,-1)
-			array = diagnols(array,1,2,1)
+			array = diagonals(array,1,0,-1)
+			array = diagonals(array,1,2,1)
 
 			#defualt boundary conditions
 			if not innerBoundary:
@@ -99,9 +99,9 @@ class LinearAlgebraFunctions(object):
 			prefactor = 1/(2*np.log10(self.derivedConstants.radialCells.f))
 
 		if order == 2:
-			array = diagnols(array,1,0,1)
-			array = diagnols(array,1,1,-2)
-			array = diagnols(array,1,2,1)
+			array = diagonals(array,1,0,1)
+			array = diagonals(array,1,1,-2)
+			array = diagonals(array,1,2,1)
 
 			#defualt boundary conditions
 			if not innerBoundary:
