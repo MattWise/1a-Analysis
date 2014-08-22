@@ -141,7 +141,7 @@ class DiscreteFunctions(object):
 	definition page 962, 5b.a
 	"""
 	def calcKappa(self):
-		array=np.zeros(self.iP.number)
+		array=np.zeros(self.iP.number, dtype=np.complex128)
 		for index,r in enumerate(self.dC.radialCells.rValues):
 			array[index]=np.complex128(4*self.Omega[index]**2+2*r*self.Omega[index]*self.DOmega[index])
 		return sqrt(array)
