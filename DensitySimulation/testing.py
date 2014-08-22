@@ -1,6 +1,8 @@
+from __future__ import division
+
 import Functions, LinAl, Params
 
-iP = Params.InitialParameters(number=10)
+iP = Params.InitialParameters(number=100)
 print str(iP)
 dC = Params.DerivedConstants(iP)
 print str(dC)
@@ -34,21 +36,14 @@ dsctFcts.initSigma0Discrete()
 print "sigma0:", dsctFcts.sigma0Discrete
 
 dsctFcts.initDSigma0Discrete()
-print "Dsigma0:", dsctFcts.Dsigma0Disrete
+print "Dsigma0:", dsctFcts.Dsigma0Discrete
 
-# ===== works up to here =====
+dsctFcts.initDKappa()
+print "Dkappa:", dsctFcts.Dkappa
 
+# todo: number=10 -> complexWarning, unclear why.
 
+wM = LinAl.WMatrix(dsctFcts)
+print "fully initialized:", wM.dFfullyInitialized
 
-
-
-
-
-
-
-
-# ===== what does not work follows: ======
-
-# dsctFcts.initDKappa()
-# print "Dkappa:", dsctFcts.Dkappa
-
+wM.initW0()

@@ -251,6 +251,7 @@ class WMatrix(object):
 		res = np.zeros((self.number, self.number))
 		for i in np.arange(self.number):
 			for k in np.arange(self.number):
+				# todo: dtype=complex after creating it!
 				res[i][k] = self.calcW0_ik(i, k)
 
 	def __calcW1(self):
@@ -321,8 +322,8 @@ class WMatrix(object):
 	def kappaValue(self, i):
 		return self.dF.kappa[i]
 
-	def DKappaValue(self,i):
-		return self.dF.DKappa[1]
+	def DkappaValue(self,i):
+		return self.dF.Dkappa[1]
 
 	def OmegaValue(self, i):
 		return self.dF.Omega[i]
@@ -371,7 +372,7 @@ class WMatrix(object):
 		denominator=self.rValue(i)*self.kappaValue(i)**3*self.sigma0Value(i)
 		term1=(self.m*self.OmegaValue(i)*(self.sigma0Value(i)+self.rValue(i)*self.Dsigma0Value(i)))
 		term2part1=-self.kappaValue(i)**2+self.m**2*self.OmegaValue(i)**2
-		term2part2=2*self.rValue(i)*self.kappaValue(i)*self.sigma0Value(i)*self.DKappaValue(i)
+		term2part2=2*self.rValue(i)*self.kappaValue(i)*self.sigma0Value(i)*self.DkappaValue(i)
 		term2part3=-2*self.m**2*self.rValue(i)*self.sigma0Value(i)*self.OmegaValue(i)*self.DOmegaValue(i)
 		return term1*(term2part1+term2part2+term2part3)/denominator
 
@@ -379,7 +380,7 @@ class WMatrix(object):
 		denominator=self.rValue(i)*self.kappaValue(i)**3*self.sigma0Value(i)
 		term1=self.sigma0Value(i)+self.rValue(i)*self.Dsigma0Value(i)
 		term2part1=self.kappaValue(i)**2-3*self.m**2*self.OmegaValue(i)**2
-		term2part2=-2*self.rValue(i)*self.kappaValue(i)*self.sigma0Value(i)*self.DKappaValue(i)
+		term2part2=-2*self.rValue(i)*self.kappaValue(i)*self.sigma0Value(i)*self.DkappaValue(i)
 		term2part3=-4*self.m**2*self.rValue(i)*self.sigma0Value(i)*self.OmegaValue(i)*self.DOmegaValue(i)
 		return term1*(term2part1+term2part2+term2part3)/denominator
 
@@ -395,7 +396,7 @@ class WMatrix(object):
 		return numerator/denominator
 
 	def y0(self, i, k):
-		term1=self.m*self.OmegaValue(i)*(4*self.rValue(i)*self.kappaValue(i)*self.sigma0Value(i)*self.DKappaValue(i))
+		term1=self.m*self.OmegaValue(i)*(4*self.rValue(i)*self.kappaValue(i)*self.sigma0Value(i)*self.DkappaValue(i))
 		term2part1=self.m*self.OmegaValue(i)*(self.kappaValue(i)-self.m*self.OmegaValue(i))
 		term2part2=self.kappaValue(i)+self.m*self.OmegaValue(i)
 		term2part3=self.m**2*self.sigma0Value(i)-2*self.rValue(i)*self.Dsigma0Value(i)
