@@ -59,7 +59,6 @@ class DiscreteFunctions(object):
 		# linAlg implementation because there is nothing like an defined
 		# interface
 		self.linAlg = LA.LinearAlgebraFunctions(self.iP, self. dC)
-
 		# the former analytic functions: will be numpy arrays
 		self.a0Discrete = None
 		self.SigmaDiscrete = None
@@ -251,7 +250,6 @@ class DiscreteFunctions(object):
 	"""call this function to initialize first derivative matrix. Must be initialized before DOmega and Dkappa."""
 
 	def initLDMOne(self):
-
 		if self.linAlg.logDerivationMatrixOne==None:
 			self.linAlg.initLDMOne()
 		else:
