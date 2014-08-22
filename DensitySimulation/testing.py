@@ -2,55 +2,79 @@ from __future__ import division,print_function
 
 import Functions, LinAl, Params
 import numpy as np
+import time as t
 
+def timing(function):
+	timeStart = t.clock()
+	function()
+	timeEnd = t.clock()
+	print("took me:", (timeEnd-timeStart), "s")
 
+# todo: number=10 -> complexWarning, unclear why.
 iP = Params.InitialParameters(number=100)
-print(str(iP))
 dC = Params.DerivedConstants(iP)
-print(str(dC))
 
 anaFcts = Functions.AnalyticalFunctions(iP, dC)
 
-
-
-
 dsctFcts = Functions.DiscreteFunctions(anaFcts)
+dsctFcts.initLDMOne()
+dsctFcts.initLMDTwo()
+dsctFcts.initJMatrix()
 
+# todo: complex warning in _quadpack._qagse !
 dsctFcts.initOmega()
-print("Omega:", dsctFcts.Omega)
 
 dsctFcts.initDOmega()
-print("DOmega:", dsctFcts.DOmega)
 
 dsctFcts.initDDOmega()
-print("DDOmega:", dsctFcts.DDOmega)
 
 dsctFcts.initKappa()
-print("kappa:", dsctFcts.kappa)
 
+# todo: complex warning in array2[index]=[...] !
 dsctFcts.initDkappa()
-print("Dkappa:", dsctFcts.Dkappa)
 
 dsctFcts.initA0Discrete()
-print("a0:", dsctFcts.a0Discrete)
 
 dsctFcts.initSigmaDiscrete()
-print("Sigma:", dsctFcts.SigmaDiscrete)
 
 dsctFcts.initSigma0Discrete()
-print("sigma0:", dsctFcts.sigma0Discrete)
 
 dsctFcts.initDSigma0Discrete()
-print("Dsigma0:", dsctFcts.Dsigma0Discrete)
 
 
-dsctFcts.initDKappa()
+""" debug println's
+
+print("Omega:", dsctFcts.Omega)
+print("DOmega:", dsctFcts.DOmega)
+print("DDOmega:", dsctFcts.DDOmega)
+print("kappa:", dsctFcts.kappa)
 print("Dkappa:", dsctFcts.Dkappa)
+print("a0:", dsctFcts.a0Discrete)
+print("Sigma:", dsctFcts.SigmaDiscrete)
+print("sigma0:", dsctFcts.sigma0Discrete)
+print("Dsigma0:", dsctFcts.Dsigma0Discrete)
+print("fully initialized:", wM.dFfullyInitialized)
 
-# todo: number=10 -> complexWarning, unclear why.
+
+"""
 
 
 wM = LinAl.WMatrix(dsctFcts)
-print("fully initialized:", wM.dFfullyInitialized)
 
-wM.initW0()
+def init():
+	wM.initW0()
+	wM.initW1()
+	wM.initW2()
+	wM.initW3()
+	wM.initW4()
+	wM.initW5()
+
+timing(init)
+
+
+print("W0:", wM.W0)
+print("W1:", wM.W1)
+print("W2:", wM.W2)
+print("W3:", wM.W3)
+print("W4:", wM.W4)
+print("W5:", wM.W5)

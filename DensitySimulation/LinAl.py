@@ -152,6 +152,7 @@ class LinearAlgebraFunctions(object):
 			result[i][dimension-1] = (radCellsValues[dimension-1]-radCellsValues[dimension-2])/(2*radCellsValues[i])\
 						   *(radCellsValues[dimension-1]/radCellsValues[i])**(2-p)
 			# some simple feedback
+			# todo: do it sideways for better overview
 			percentage = round(100*(i/dimension), 0)
 			if percentage%5==0 and not (percentage==printed):
 				print "--> completed:", percentage, "%"
@@ -188,7 +189,6 @@ class WMatrix(object):
 		self.W3 = None
 		self.W4 = None
 		self.W5 = None
-		self.W = None
 
 	# ===============
 	# init functions
@@ -196,96 +196,98 @@ class WMatrix(object):
 
 	def initW0(self):
 		if self.W0 == None and self.dFfullyInitialized:
+			print("initW0(): start")
 			self.W0 = self.__calcW0()
+			print("initW0(): end")
 		else:
 			raise BaseException("initW0(): already or DiscreteFunctions passed not fully initialized")
 
 	def initW1(self):
 		if self.W1 == None and self.dFfullyInitialized:
+			print("initW1(): start")
 			self.W1 = self.__calcW1()
+			print("initW1(): end")
 		else:
 			raise BaseException("initW1(): already or DiscreteFunctions passed not fully initialized")
 
 	def initW2(self):
 		if self.W2 == None and self.dFfullyInitialized:
+			print("initW2(): start")
 			self.W2 = self.__calcW2()
+			print("initW2(): end")
 		else:
 			raise BaseException("initW2(): already or DiscreteFunctions passed not fully initialized")
 
 	def initW3(self):
 		if self.W3 == None and self.dFfullyInitialized:
+			print("initW3(): start")
 			self.W3 = self.__calcW3()
+			print("initW3(): end")
 		else:
 			raise BaseException("initW3(): already or DiscreteFunctions passed not fully initialized")
 
 	def initW4(self):
 		if self.W4 == None and self.dFfullyInitialized:
+			print("initW4(): start")
 			self.W4 = self.__calcW4()
+			print("initW4(): end")
 		else:
 			raise BaseException("initW4(): already or DiscreteFunctions passed not fully initialized")
 
 	def initW5(self):
 		if self.W5 == None and self.dFfullyInitialized:
+			print("initW5(): start")
 			self.W5 = self.__calcW5()
+			print("initW5(): end")
 		else:
 			raise BaseException("initW5(): already or DiscreteFunctions passed not fully initialized")
-
-	def initW(self):
-		if self.W == None \
-				and not (self.W0 == None
-						 or self.W1 == None
-						 or self.W2 == None
-						 or self.W3 == None
-						 or self.W4 == None
-						 or self.W5 == None)\
-				and self.dFfullyInitialized:
-			self.W = self.__calcW()
-		else:
-			raise BaseException("initW(): already, W# not or DiscreteFunctions passed not fully initialized")
 
 	# ======================
 	# calculating functions
 	# ======================
 
 	def __calcW0(self):
-		res = np.zeros((self.number, self.number))
+		res = np.zeros((self.number, self.number), dtype=np.complex128)
 		for i in np.arange(self.number):
 			for k in np.arange(self.number):
-				# todo: dtype=complex after creating it!
-				res[i][k] = self.calcW0_ik(i, k)
+				element = self.calcW0_ik(i, k)
+				res[i][k] = element
+		return res
 
 	def __calcW1(self):
-		res = np.zeros((self.number, self.number))
+		res = np.zeros((self.number, self.number), dtype=np.complex128)
 		for i in np.arange(self.number):
 			for k in np.arange(self.number):
 				res[i][k] = self.calcW1_ik(i, k)
+		return res
 
 	def __calcW2(self):
-		res = np.zeros((self.number, self.number))
+		res = np.zeros((self.number, self.number), dtype=np.complex128)
 		for i in np.arange(self.number):
 			for k in np.arange(self.number):
 				res[i][k] = self.calcW2_ik(i, k)
+		return res
 
 	def __calcW3(self):
-		res = np.zeros((self.number, self.number))
+		res = np.zeros((self.number, self.number), dtype=np.complex128)
 		for i in np.arange(self.number):
 			for k in np.arange(self.number):
 				res[i][k] = self.calcW3_ik(i, k)
+		return res
 
 	def __calcW4(self):
-		res = np.zeros((self.number, self.number))
+		res = np.zeros((self.number, self.number), dtype=np.complex128)
 		for i in np.arange(self.number):
 			for k in np.arange(self.number):
 				res[i][k] = self.calcW4_ik(i, k)
+		return res
 
 	def __calcW5(self):
-		res = np.zeros((self.number, self.number))
+		res = np.zeros((self.number, self.number), dtype=np.complex128)
 		for i in np.arange(self.number):
 			for k in np.arange(self.number):
 				res[i][k] = self.calcW5_ik(i, k)
-
-	def __calcW(self):
-		zeros=np.zeros(self.number,self.number)
+		return res
 
 
 	# ==============================
@@ -494,6 +496,8 @@ class WMatrix(object):
 	# functions for calculating W^(x)_ik element
 	# ===========================================
 
+	# todo: make parallel :-O uses less memory and only one processor at 100%
+
 	def calcW0_ik(self, i, k):
 		if i==0:
 			summand1 = -self.m*self.OmegaValue(i)*self.einsum(self.d1Value, self.jValue, i, k)
@@ -572,7 +576,7 @@ class WMatrix(object):
 		if i==0:
 			return self.delta(1, self.m)*self.rValue(i)**3*self.jValue(i, k)/(2*G*(self.mStar + self.mDisk))
 		elif i==self.number-1:
-			summand1 = (self.delta(1, self.m)*self.rValue(i)**3*self.jValue(i, j))/(2*G*(self.mStar+self.mDisk))
+			summand1 = (self.delta(1, self.m)*self.rValue(i)**3*self.jValue(i, k))/(2*G*(self.mStar+self.mDisk))
 			summand2 = (self.rValue(i)*self.delta(i, k)*(-1))/(2*pi*G*self.sigma0Value(i)*self.p)
 			return summand1 + summand2
 		else:
