@@ -285,7 +285,8 @@ class WMatrix(object):
 				res[i][k] = self.calcW5_ik(i, k)
 
 	def __calcW(self):
-		return self.W0 + self.W1 + self.W2 + self.W3 + self.W4 + self.W5
+		zeros=np.zeros(self.number,self.number)
+
 
 	# ==============================
 	# value functions

@@ -1,6 +1,7 @@
 from __future__ import division, print_function
 
 import time
+import numpy as np
 
 import Params,Functions,LinAl
 
@@ -24,8 +25,17 @@ def densitySimulation(number=500, rStar=10 ** 11, rDisk=10 ** 15, p=1, q=5 / 8, 
 	analyticFunctions=Functions.AnalyticalFunctions(initParams,derivedConstants)
 	discreteFunctions=Functions.DiscreteFunctions(analyticFunctions)
 	discreteFunctions.init()
-	print (discreteFunctions.DKappa)
-	#print (discreteFunctions.DKappa)
+
+	print ("sigma0Discrete:",discreteFunctions.sigma0Discrete)
+	print("Dsigma0Discrete:",discreteFunctions.Dsigma0Discrete)
+	print("a0Discrete:",discreteFunctions.a0Discrete)
+	print("Omega:",discreteFunctions.Omega)
+	print("DOmega:",discreteFunctions.DOmega)
+	print("DDOmega:",discreteFunctions.DDOmega)
+	print("kappa:",discreteFunctions.kappa)
+	print("Dkappa:",discreteFunctions.Dkappa)
+	print("SigmaDiscrete:",discreteFunctions.SigmaDiscrete)
+
 
 A=time.clock()
 densitySimulation()
