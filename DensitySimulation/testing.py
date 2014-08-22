@@ -11,6 +11,7 @@ def timing(function):
 	print("took me:", (timeEnd-timeStart), "s")
 
 # todo: number=10 -> complexWarning, unclear why.
+
 iP = Params.InitialParameters(number=100)
 dC = Params.DerivedConstants(iP)
 

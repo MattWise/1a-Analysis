@@ -189,6 +189,8 @@ class WMatrix(object):
 		self.W3 = None
 		self.W4 = None
 		self.W5 = None
+		self.B14A=None
+		self.B14B=None
 
 	# ===============
 	# init functions
@@ -242,6 +244,31 @@ class WMatrix(object):
 		else:
 			raise BaseException("initW5(): already or DiscreteFunctions passed not fully initialized")
 
+	def initB14A(self):
+		if self.B14A == None \
+				and not (self.W0 == None
+						 or self.W1 == None
+						 or self.W2 == None
+						 or self.W3 == None
+						 or self.W4 == None
+						 or self.W5 == None)\
+				and self.dFfullyInitialized:
+			self.B14A = self.__calcB14A()
+		else: raise BaseException("initB14A(): already, W# not or DiscreteFunctions passed not fully initialized")
+
+
+	def initB14B(self):
+		if self.B14B == None \
+				and not (self.W0 == None
+						 or self.W1 == None
+						 or self.W2 == None
+						 or self.W3 == None
+						 or self.W4 == None
+						 or self.W5 == None)\
+				and self.dFfullyInitialized:
+			self.B14B = self.__calcB14B()
+		else: raise BaseException("initB14A(): already, W# not or DiscreteFunctions passed not fully initialized")
+
 	# ======================
 	# calculating functions
 	# ======================
@@ -288,6 +315,36 @@ class WMatrix(object):
 			for k in np.arange(self.number):
 				res[i][k] = self.calcW5_ik(i, k)
 		return res
+
+	def __calcB14A(self):
+		print("Creating B14A Matrix...")
+		zeros=np.zeros((self.number,self.number),dtype=np.complex128)
+		I=np.identity(self.number,dtype=np.complex128)
+		C1=np.concatenate((-1*self.W0,zeros,zeros,zeros,zeros),0)
+		C2=np.concatenate((zeros,I,zeros,zeros,zeros),0)
+		C3=np.concatenate((zeros,zeros,I,zeros,zeros),0)
+		C4=np.concatenate((zeros,zeros,zeros,I,zeros),0)
+		C5=np.concatenate((zeros,zeros,zeros,zeros,I),0)
+		columns=(C1,C2,C3,C4,C5)
+		print("Stage 1 complete...")
+		array=np.concatenate(columns,1)
+		print("Done.")
+		return array
+
+	def __calcB14C(self):
+		print("Creating B14B Matrix...")
+		zeros=np.zeros((self.number,self.number),dtype=np.complex128)
+		I=np.identity(self.number,dtype=np.complex128)
+		C1=np.concatenate((self.W1,self.W5,self.W4,self.W3,self.W2),0)
+		C2=np.concatenate((zeros,zeros,I,zeros,zeros),0)
+		C3=np.concatenate((zeros,zeros,zeros,I,zeros),0)
+		C4=np.concatenate((zeros,zeros,zeros,zeros,I),0)
+		C5=np.concatenate((I,zeros,zeros,zeros,zeros),0)
+		columns=(C1,C2,C3,C4,C5)
+		print("Stage 1 complete...")
+		array=np.concatenate(columns,1)
+		print("Done.")
+		return array
 
 
 	# ==============================
