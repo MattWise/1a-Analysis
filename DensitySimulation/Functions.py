@@ -22,22 +22,22 @@ class AnalyticalFunctions(object):
 	""" unperturbed surface density sigma0. uses sigmaStar. definition page 964, 23a.
 	"""
 	def sigma0(self,r):
-		return self.dC.sigmaStar*(self.iP.rStar/float(r))**self.iP.p
+		return np.complex128(self.dC.sigmaStar*(self.iP.rStar/float(r))**self.iP.p)
 
 	"""first derivative of surface density sigma0. Calculated analytically.
 	"""
 	def Dsigma0(self,r):
-		return (-self.iP.p*self.dC.sigmaStar*self.iP.rStar**self.iP.p)/(r**(self.iP.p+1))
+		return np.complex128((-self.iP.p*self.dC.sigmaStar*self.iP.rStar**self.iP.p)/(r**(self.iP.p+1)))
 
 	""" sound speed in the disk. definition page 964 before 23a in the bulk block of text.
 	"""
 	def a0(self,r):
-		return self.iP.a0Star*float(r)**(-self.iP.q/2)
+		return np.complex128(self.iP.a0Star*float(r)**(-self.iP.q/2))
 
 	""" the capital sigma. definition page 961, 1c
 	"""
 	def Sigma(self,r):
-		return (2*m.pi*constants.G*self.sigma0(float(r)))/(self.a0(float(r))**2)
+		return np.complex128((2*m.pi*constants.G*self.sigma0(float(r)))/(self.a0(float(r))**2))
 
 
 """ this class represents everything we have in a discrete manner: discretized analytic functions and discrete
@@ -59,9 +59,7 @@ class DiscreteFunctions(object):
 		# linAlg implementation because there is nothing like an defined
 		# interface
 		self.linAlg = LA.LinearAlgebraFunctions(self.iP, self. dC)
-		self.linAlg.initLDMOne()
-		self.linAlg.initLDMTwo()
-		self.linAlg.initJMatrix()
+
 		# the former analytic functions: will be numpy arrays
 		self.a0Discrete = None
 		self.SigmaDiscrete = None
@@ -123,7 +121,7 @@ class DiscreteFunctions(object):
 				return A*B
 
 
-			return omega_star(r)/(r+self.iP.eta)+omega_disk(r)/(r+self.iP.eta)+omega_pressure(r)/r
+			return np.complex128(omega_star(r)/(r+self.iP.eta)+omega_disk(r)/(r+self.iP.eta)+omega_pressure(r)/r)
 
 		return sqrt(-1*self.linAlg.firstDerivative(self.discretizer(omega_continuous)))
 
@@ -146,7 +144,7 @@ class DiscreteFunctions(object):
 	def calcKappa(self):
 		array=np.zeros(self.iP.number)
 		for index,r in enumerate(self.dC.radialCells.rValues):
-			array[index]=4*self.Omega[index]**2+2*r*self.Omega[index]*self.DOmega[index]
+			array[index]=np.complex128(4*self.Omega[index]**2+2*r*self.Omega[index]*self.DOmega[index])
 		return sqrt(array)
 
 	"""	Calculates the first derivative of kappa analytically. As kappa is dependent on omega, which is discrete, the result is also discrete. Returns vector with
@@ -156,7 +154,7 @@ class DiscreteFunctions(object):
 		array1=(.5*self.kappa)**-1
 		array2=np.zeros(self.iP.number)
 		for index,r in enumerate(self.dC.radialCells.rValues):
-			array2[index]=10*self.Omega[index]*self.DOmega[index]+2*r*self.DOmega[index]**2+2*r*self.Omega[index]*self.DDOmega[index]
+			array2[index]=np.complex128(10*self.Omega[index]*self.DOmega[index]+2*r*self.DOmega[index]**2+2*r*self.Omega[index]*self.DDOmega[index])
 		return array1*array2
 
 	# ============== init discretized fields ==============
@@ -244,19 +242,45 @@ class DiscreteFunctions(object):
 	kappa. if already initialized, an error is raised.
 	derivation is analytical, but dependence on omega means values are discrete.
 	"""
-	def initDKappa(self):
+	def initDkappa(self):
 		if self.Dkappa == None:
 			self.Dkappa = self.calcDKappa()
 		else:
 			raise BaseException("Dkappa already initialized")
 
+	"""call this function to initialize first derivative matrix. Must be initialized before DOmega and Dkappa."""
+
+	def initLDMOne(self):
+
+		if self.linAlg.logDerivationMatrixOne==None:
+			self.linAlg.initLDMOne()
+		else:
+			raise BaseException("logDerivationMatrixOne already initialized")
+
+	"""call this function to initialize second derivative matrix. Must be initialized before DDOmega."""
+
+	def initLMDTwo(self):
+		if self.linAlg.logDerivationMatrixTwo==None:
+			self.linAlg.initLDMTwo()
+		else:
+			raise BaseException("logDerivationMatrixTwo already initialized")
+
+	"""call this function to initialize the j integration matrix. Must be initialized before proceeding to linear algebra."""
+
+	def initJMatrix(self):
+		if self.linAlg.JMatrix==None:
+			self.linAlg.initJMatrix()
+		else:
+			raise BaseException("JMatrix already initialized")
 
 
-# ======================== Init Function ========================
+	# ======================== Init Function ========================
 	""" call this function in order to initialize the discrete values for
 	all functions (i.e.: kappa, Omega, sigma0, sigma, a0).
 	"""
 	def init(self):
+		self.initLDMOne()
+		self.initLMDTwo()
 		self.initSigma0Discrete()
 		self.initDSigma0Discrete()
 		self.initA0Discrete()
@@ -264,8 +288,9 @@ class DiscreteFunctions(object):
 		self.initDOmega()
 		self.initDDOmega()
 		self.initKappa()
-		self.initDKappa()
+		self.initDkappa()
 		self.initSigmaDiscrete()
+		self.initJMatrix()
 
 
 # ======================== TESTING AREA ========================
