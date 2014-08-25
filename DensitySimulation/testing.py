@@ -2,7 +2,9 @@ from __future__ import division,print_function
 
 import Functions, LinAl, Params
 import numpy as np
+import multiprocessing
 import time as t
+
 
 def timing(function):
 	timeStart = t.clock()
@@ -72,10 +74,18 @@ def init():
 
 timing(init)
 
-
 print("W0:", wM.W0)
 print("W1:", wM.W1)
 print("W2:", wM.W2)
 print("W3:", wM.W3)
 print("W4:", wM.W4)
 print("W5:", wM.W5)
+
+def f(x):
+	return x**2
+
+if __name__ == '__main__':
+	multiprocessing.freeze_support()
+	p=multiprocessing.Pool(processes=4)
+	result=p.apply_async(f,(2,))
+	print(result.get())
