@@ -154,7 +154,7 @@ class DiscreteFunctions(object):
 	"""
 	def calcDKappa(self):
 		array1=(.5*self.kappa)**-1
-		array2=np.zeros(self.iP.number)
+		array2=np.zeros(self.iP.number,dtype=np.complex128)
 		for index,r in enumerate(self.dC.radialCells.rValues):
 			array2[index]=np.complex128(10*self.Omega[index]*self.DOmega[index]+2*r*self.DOmega[index]**2+2*r*self.Omega[index]*self.DDOmega[index])
 		return array1*array2

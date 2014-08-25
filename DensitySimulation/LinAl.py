@@ -197,6 +197,18 @@ class WMatrix(object):
 	# init functions
 	# ===============
 
+	def init(self):
+
+		#todo parallel?
+		self.initW0()
+		self.initW1()
+		self.initW2()
+		self.initW3()
+		self.initW4()
+		self.initW5()
+		self.initB14A()
+		self.initB14C()
+
 	def initW0(self):
 		if self.W0 == None and self.dFfullyInitialized:
 			print("initW0(): start")
