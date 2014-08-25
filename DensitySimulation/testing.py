@@ -5,6 +5,8 @@ import numpy as np
 import multiprocessing
 import time as t
 
+import matplotlib.pyplot as plt
+
 
 def timing(function):
 	timeStart = t.clock()
@@ -20,47 +22,8 @@ dC = Params.DerivedConstants(iP)
 anaFcts = Functions.AnalyticalFunctions(iP, dC)
 
 dsctFcts = Functions.DiscreteFunctions(anaFcts)
-dsctFcts.initLDMOne()
-dsctFcts.initLMDTwo()
-dsctFcts.initJMatrix()
 
-# todo: complex warning in _quadpack._qagse !
-dsctFcts.initOmega()
-
-dsctFcts.initDOmega()
-
-dsctFcts.initDDOmega()
-
-dsctFcts.initKappa()
-
-# todo: complex warning in array2[index]=[...] !
-dsctFcts.initDkappa()
-
-dsctFcts.initA0Discrete()
-
-dsctFcts.initSigmaDiscrete()
-
-dsctFcts.initSigma0Discrete()
-
-dsctFcts.initDSigma0Discrete()
-
-
-""" debug println's
-
-print("Omega:", dsctFcts.Omega)
-print("DOmega:", dsctFcts.DOmega)
-print("DDOmega:", dsctFcts.DDOmega)
-print("kappa:", dsctFcts.kappa)
-print("Dkappa:", dsctFcts.Dkappa)
-print("a0:", dsctFcts.a0Discrete)
-print("Sigma:", dsctFcts.SigmaDiscrete)
-print("sigma0:", dsctFcts.sigma0Discrete)
-print("Dsigma0:", dsctFcts.Dsigma0Discrete)
-print("fully initialized:", wM.dFfullyInitialized)
-
-
-"""
-
+dsctFcts.init()
 
 wM = LinAl.WMatrix(dsctFcts)
 
@@ -71,21 +34,36 @@ def init():
 	wM.initW3()
 	wM.initW4()
 	wM.initW5()
+	wM.initB14A()
+	wM.initB14C()
 
-timing(init)
+init()
 
-print("W0:", wM.W0)
-print("W1:", wM.W1)
-print("W2:", wM.W2)
-print("W3:", wM.W3)
-print("W4:", wM.W4)
-print("W5:", wM.W5)
+eigSol = LinAl.EigenvalueSolver(wM)
 
-def f(x):
-	return x**2
+eigSol.initEigen()
 
-if __name__ == '__main__':
-	multiprocessing.freeze_support()
-	p=multiprocessing.Pool(processes=4)
-	result=p.apply_async(f,(2,))
-	print(result.get())
+print("# of eigenvalues", len(eigSol.eigenvalues))
+
+real = []
+img = []
+
+for z in eigSol.eigenvalues:
+	rp = z.real
+	im = z.imag
+	if not (rp == np.inf or rp == - np.inf) \
+			and not (im == np.inf or im == - np.inf):
+		real.append(rp)
+		img.append(im)
+
+
+print("real",real)
+print("realLen=" + str(len(real)))
+print("img",img)
+print("imagLen=" + str(len(img)))
+
+print(min(real), max(real))
+print(min(img), max(img))
+
+plt.scatter(real[4:],img[4:])
+plt.show()
