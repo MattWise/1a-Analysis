@@ -2,6 +2,7 @@ from __future__ import division
 
 import numpy as np
 from scipy.constants import pi, G
+import scipy.linalg as sciLa
 
 """ This class holds all the matrices needed for numerical derivatives and integration. Since matrix creation is
 quite intense in time and power, we use a non-static class here in order to store the calculated matrices.
@@ -189,8 +190,8 @@ class WMatrix(object):
 		self.W3 = None
 		self.W4 = None
 		self.W5 = None
-		self.B14A=None
-		self.B14B=None
+		self.B14A = None
+		self.B14C = None
 
 	# ===============
 	# init functions
@@ -257,8 +258,8 @@ class WMatrix(object):
 		else: raise BaseException("initB14A(): already, W# not or DiscreteFunctions passed not fully initialized")
 
 
-	def initB14B(self):
-		if self.B14B == None \
+	def initB14C(self):
+		if self.B14C == None \
 				and not (self.W0 == None
 						 or self.W1 == None
 						 or self.W2 == None
@@ -266,7 +267,7 @@ class WMatrix(object):
 						 or self.W4 == None
 						 or self.W5 == None)\
 				and self.dFfullyInitialized:
-			self.B14B = self.__calcB14B()
+			self.B14C = self.__calcB14C()
 		else: raise BaseException("initB14A(): already, W# not or DiscreteFunctions passed not fully initialized")
 
 	# ======================
@@ -332,7 +333,7 @@ class WMatrix(object):
 		return array
 
 	def __calcB14C(self):
-		print("Creating B14B Matrix...")
+		print("Creating B14C Matrix...")
 		zeros=np.zeros((self.number,self.number),dtype=np.complex128)
 		I=np.identity(self.number,dtype=np.complex128)
 		C1=np.concatenate((self.W1,self.W5,self.W4,self.W3,self.W2),0)
@@ -666,6 +667,32 @@ class WMatrix(object):
 			summand2 = self.fB2(i, k) * self.y3(i, k)
 			summand3 = (self.c5(i, k) * self.f2(i, k))/(self.kappaValue(i)**5)
 			return summand1 + summand2 + summand3
+
+
+
+
+
+""" Given an instance of a fully initialized WMatrix object, this class uses the matrices B14A and B14C. The result is
+the wanted S vector (surface density purturbance).
+"""
+class EigenvalueSolver(object):
+	# constructor
+	def __init__(self, wMatrix):
+		# input class
+		self.wM = wMatrix
+		self.eigenvalues = None
+		self.eigenvectors = None
+
+	def initEigen(self):
+		if self.wM.dFfullyInitialized \
+				and not (self.wM.B14A == None or self.wM.B14C == None):
+			self.eigenvalues, self.eigenvectors = self.__calcEigen()
+		else:
+			raise BaseException("given WMatrix object not fully or its B14A, B14C matrices not initialized")
+	
+	def __calcEigen(self):
+		return sciLa.eig(self.wM.B14A, self.wM.B14C)
+
 
 """
 
