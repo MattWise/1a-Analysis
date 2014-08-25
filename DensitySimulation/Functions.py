@@ -91,15 +91,15 @@ class DiscreteFunctions(object):
 	def calcOmega(self):
 	#returns discretized capital omega as one dimensional numpy array. See appendix A.
 
-		def omega_continuous(r):
+		def psi_grav(r):
 			# create continuous function of r to feed through discretizer.
-			#Actually equal to Omega^2
+			# potential due to star and disk divided by r.
 
-			def omega_star(r):
+			def psi_star(r):
 				#Equation A2 solved for omega star. Modified to use softened gravity.
-				return constants.G*self.iP.mStar/(r+self.iP.eta)**2
+				return -constants.G*self.iP.mStar/(r+self.iP.eta)
 
-			def omega_disk(r):
+			def psi_disk(r):
 				#Equation A3 and A5. Softened gravity used throughout.
 
 				def func(phi,x,r):
@@ -111,18 +111,21 @@ class DiscreteFunctions(object):
 				def lower_bound(x):
 					return float(0)
 
-				return r*(dblquad(func,self.iP.rStar/r,self.iP.rDisk/r,lower_bound,upper_bound,args=(r,))[0])
+				return r*-(dblquad(func,self.iP.rStar/r,self.iP.rDisk/r,lower_bound,upper_bound,args=(r,))[0])
 
-			def omega_pressure(r):
-				#Equation A4
-				A=(self.analyticFunctions.a0(r)**2)/self.analyticFunctions.sigma0(r) #a_0^2/sigma_0 term
-				B=(-self.iP.p*self.dC.sigmaStar*self.iP.rStar**self.iP.p)/r**(self.iP.p+1) #d sigma_0/dr term
-				return A*B
+			return np.complex128((psi_star(r)+psi_disk(r)/r))
 
+		def psi_pressure(r):
+			#Equation A4
+			#Actually first derivative with respect to r of psi pressure
+			A=(self.analyticFunctions.a0(r)**2)/self.analyticFunctions.sigma0(r) #a_0^2/sigma_0 term
+			B=(-self.iP.p*self.dC.sigmaStar*self.iP.rStar**self.iP.p)/r**(self.iP.p+1) #d sigma_0/dr term
+			return A*B
 
-			return np.complex128(omega_star(r)/(r+self.iP.eta)+omega_disk(r)/(r+self.iP.eta)+omega_pressure(r)/r)
+		psi_grav_discrete=self.linAlg.firstDerivative(self.discretizer(psi_grav))
+		psi_pressure_discrete=self.discretizer(psi_pressure)
 
-		return sqrt(-1*self.linAlg.firstDerivative(self.discretizer(omega_continuous)))
+		return sqrt(psi_grav_discrete+psi_pressure_discrete)
 
 	""" Calculates the first derivative of capital omega using numerical differentiation method in ARS. Returns vector with
 	components equaling value at each cell.
