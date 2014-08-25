@@ -1,11 +1,12 @@
 from __future__ import division, print_function
 
 import time
+import matplotlib
 import numpy as np
 
 import Params,Functions,LinAl
 
-def densitySimulation(number=500, rStar=10 ** 11, rDisk=10 ** 15, p=1, q=5 / 8, mStar=10 ** 33, mDisk=10 ** 33, a0Star=10**9, m=1, eta=0.1):
+def densitySimulation(number=100, rStar=10 ** 11, rDisk=10 ** 15, p=1, q=5 / 8, mStar=10 ** 33, mDisk=10 ** 33, a0Star=10**9, m=1, eta=0.1):
 	"""
 	:param number: Number of cells to use. More means better resolution but slower run. Note cell size is on logarithmic scale.
 	:param rStar: Radius of star in cm
@@ -25,16 +26,12 @@ def densitySimulation(number=500, rStar=10 ** 11, rDisk=10 ** 15, p=1, q=5 / 8, 
 	analyticFunctions=Functions.AnalyticalFunctions(initParams,derivedConstants)
 	discreteFunctions=Functions.DiscreteFunctions(analyticFunctions)
 	discreteFunctions.init()
+	wMatrix=LinAl.WMatrix(discreteFunctions)
+	wMatrix.init()
+	eigenSolver=LinAl.EigenvalueSolver(wMatrix)
+	eigenSolver.initEigen()
 
-	print ("sigma0Discrete:",discreteFunctions.sigma0Discrete)
-	print("Dsigma0Discrete:",discreteFunctions.Dsigma0Discrete)
-	print("a0Discrete:",discreteFunctions.a0Discrete)
-	print("Omega:",discreteFunctions.Omega)
-	print("DOmega:",discreteFunctions.DOmega)
-	print("DDOmega:",discreteFunctions.DDOmega)
-	print("kappa:",discreteFunctions.kappa)
-	print("Dkappa:",discreteFunctions.Dkappa)
-	print("SigmaDiscrete:",discreteFunctions.SigmaDiscrete)
+	print(eigenSolver.eigenvalues)
 
 
 A=time.clock()
