@@ -152,6 +152,7 @@ class LinearAlgebraFunctions(object):
 			result[i][dimension-1] = (radCellsValues[dimension-1]-radCellsValues[dimension-2])/(2*radCellsValues[i])\
 						   *(radCellsValues[dimension-1]/radCellsValues[i])**(2-p)
 			# some simple feedback
+			# todo: do it sideways for better overview
 			percentage = round(100*(i/dimension), 0)
 			if percentage%5==0 and not (percentage==printed):
 				print "--> completed:", percentage, "%"
@@ -197,37 +198,49 @@ class WMatrix(object):
 
 	def initW0(self):
 		if self.W0 == None and self.dFfullyInitialized:
+			print("initW0(): start")
 			self.W0 = self.__calcW0()
+			print("initW0(): end")
 		else:
 			raise BaseException("initW0(): already or DiscreteFunctions passed not fully initialized")
 
 	def initW1(self):
 		if self.W1 == None and self.dFfullyInitialized:
+			print("initW1(): start")
 			self.W1 = self.__calcW1()
+			print("initW1(): end")
 		else:
 			raise BaseException("initW1(): already or DiscreteFunctions passed not fully initialized")
 
 	def initW2(self):
 		if self.W2 == None and self.dFfullyInitialized:
+			print("initW2(): start")
 			self.W2 = self.__calcW2()
+			print("initW2(): end")
 		else:
 			raise BaseException("initW2(): already or DiscreteFunctions passed not fully initialized")
 
 	def initW3(self):
 		if self.W3 == None and self.dFfullyInitialized:
+			print("initW3(): start")
 			self.W3 = self.__calcW3()
+			print("initW3(): end")
 		else:
 			raise BaseException("initW3(): already or DiscreteFunctions passed not fully initialized")
 
 	def initW4(self):
 		if self.W4 == None and self.dFfullyInitialized:
+			print("initW4(): start")
 			self.W4 = self.__calcW4()
+			print("initW4(): end")
 		else:
 			raise BaseException("initW4(): already or DiscreteFunctions passed not fully initialized")
 
 	def initW5(self):
 		if self.W5 == None and self.dFfullyInitialized:
+			print("initW5(): start")
 			self.W5 = self.__calcW5()
+			print("initW5(): end")
 		else:
 			raise BaseException("initW5(): already or DiscreteFunctions passed not fully initialized")
 
@@ -261,41 +274,47 @@ class WMatrix(object):
 	# ======================
 
 	def __calcW0(self):
-		res = np.zeros((self.number, self.number))
+		res = np.zeros((self.number, self.number), dtype=np.complex128)
 		for i in np.arange(self.number):
 			for k in np.arange(self.number):
-				# todo: dtype=complex after creating it!
-				res[i][k] = self.calcW0_ik(i, k)
+				element = self.calcW0_ik(i, k)
+				res[i][k] = element
+		return res
 
 	def __calcW1(self):
-		res = np.zeros((self.number, self.number))
+		res = np.zeros((self.number, self.number), dtype=np.complex128)
 		for i in np.arange(self.number):
 			for k in np.arange(self.number):
 				res[i][k] = self.calcW1_ik(i, k)
+		return res
 
 	def __calcW2(self):
-		res = np.zeros((self.number, self.number))
+		res = np.zeros((self.number, self.number), dtype=np.complex128)
 		for i in np.arange(self.number):
 			for k in np.arange(self.number):
 				res[i][k] = self.calcW2_ik(i, k)
+		return res
 
 	def __calcW3(self):
-		res = np.zeros((self.number, self.number))
+		res = np.zeros((self.number, self.number), dtype=np.complex128)
 		for i in np.arange(self.number):
 			for k in np.arange(self.number):
 				res[i][k] = self.calcW3_ik(i, k)
+		return res
 
 	def __calcW4(self):
-		res = np.zeros((self.number, self.number))
+		res = np.zeros((self.number, self.number), dtype=np.complex128)
 		for i in np.arange(self.number):
 			for k in np.arange(self.number):
 				res[i][k] = self.calcW4_ik(i, k)
+		return res
 
 	def __calcW5(self):
-		res = np.zeros((self.number, self.number))
+		res = np.zeros((self.number, self.number), dtype=np.complex128)
 		for i in np.arange(self.number):
 			for k in np.arange(self.number):
 				res[i][k] = self.calcW5_ik(i, k)
+		return res
 
 	def __calcB14A(self):
 		print("Creating B14A Matrix...")
@@ -398,7 +417,7 @@ class WMatrix(object):
 
 	def fA2(self,i, k):
 		return self.delta(1, self.m) * self.rValue(i)**4/2\
-		       *(self.jValue(i, k))/(G*(self.mStar+self.mDisk))
+			   *(self.jValue(i, k))/(G*(self.mStar+self.mDisk))
 
 	def fB0(self, i, k):
 		summand1 = self.rValue(i)**2*self.einsum(self.delta, self.jValue, i, k)
@@ -407,7 +426,7 @@ class WMatrix(object):
 
 	def fB2(self, i, k):
 		return self.delta(1, self.m) * self.rValue(i)**5/2\
-		       *(self.jValue(i, k))/(G*(self.mStar+self.mDisk))
+			   *(self.jValue(i, k))/(G*(self.mStar+self.mDisk))
 
 	def x0(self, i, k):
 		denominator=self.rValue(i)*self.kappaValue(i)**3*self.sigma0Value(i)
@@ -474,13 +493,13 @@ class WMatrix(object):
 		summand7 = - self.d1Value(i, k)/(self.rValue(i)*self.sigma0Value(i))
 		summand8 = self.q*(self.q+1)*self.delta(i, k)/(self.rValue(i)*self.sigma0Value(i))
 		return summand1 \
-		       + summand2 \
-		       + summand3 \
-		       + summand4 \
-		       + summand5 \
-		       + summand6 \
-		       + summand7 \
-		       + summand8
+			   + summand2 \
+			   + summand3 \
+			   + summand4 \
+			   + summand5 \
+			   + summand6 \
+			   + summand7 \
+			   + summand8
 
 	def f2(self, i, k):
 		return - (self.kappaValue(i)**2*self.rValue(i)*self.delta(i, k))/(2*pi*G*self.sigma0Value(i))
@@ -534,6 +553,8 @@ class WMatrix(object):
 	# functions for calculating W^(x)_ik element
 	# ===========================================
 
+	# todo: make parallel :-O uses less memory and only one processor at 100%
+
 	def calcW0_ik(self, i, k):
 		if i==0:
 			summand1 = -self.m*self.OmegaValue(i)*self.einsum(self.d1Value, self.jValue, i, k)
@@ -542,8 +563,7 @@ class WMatrix(object):
 			summand4 = -self.m*self.OmegaValue(i)*self.d1Value(i, k)/(self.SigmaValue(i)*self.rValue(i))
 			summand5 = self.m*self.OmegaValue(i)*self.q*self.delta(i, k)/(self.SigmaValue(i)*self.rValue(i))
 			summand6 = -2*self.m*self.OmegaValue(i)*self.delta(i, k)/(self.SigmaValue(i)*self.rValue(i))
-			return summand1 + summand2 + summand3
-			+ summand4 + summand5 + summand6
+			return summand1 + summand2 + summand3+ summand4 + summand5 + summand6
 		elif i==self.number-1:
 			summand1 = -self.m*self.OmegaValue(i)*self.einsum(self.d1Value, self.jValue, i, k)
 			summand2 = -self.m*self.OmegaValue(i)*(1-self.p)*self.einsum(self.delta, self.jValue, i, k)
@@ -552,8 +572,8 @@ class WMatrix(object):
 			summand5 = self.m*self.OmegaValue(i)*self.q*self.delta(i, k)/(self.SigmaValue(i)*self.rValue(i))
 			summand6 = -2*self.m*self.OmegaValue(i)*self.delta(i, k)/(self.SigmaValue(i)*self.rValue(i))
 			summand7 = - self.rValue(i)*self.delta(i, k)*self.m\
-			           *self.OmegaValue(i)/(2*pi*G*self.sigma0Value(i)*self.p)\
-			           *(self.kappaValue(i)**2-self.m**2*self.OmegaValue(i)**2)
+					   *self.OmegaValue(i)/(2*pi*G*self.sigma0Value(i)*self.p)\
+					   *(self.kappaValue(i)**2-self.m**2*self.OmegaValue(i)**2)
 			return summand1 + summand2 + summand3
 			+ summand4 + summand5 + summand6 + summand7
 		else:
@@ -576,9 +596,9 @@ class WMatrix(object):
 			summand3 = self.d1Value(i, k)/(self.SigmaValue(i)*self.rValue(i))
 			summand4 = - self.q * self.delta(i, k)/(self.SigmaValue(i)*self.rValue(i))
 			summand5 = self.rValue(i)*self.delta(i, k)\
-			           *(self.kappaValue(i)**2-self.m**2*self.OmegaValue(i)**2)/(2*pi*G*self.p*self.sigma0Value(i))
+					   *(self.kappaValue(i)**2-self.m**2*self.OmegaValue(i)**2)/(2*pi*G*self.p*self.sigma0Value(i))
 			summand6 = - self.rValue(i)*self.delta(i, k) \
-			           * self.m**2*self.OmegaValue(i)**2/(2*pi*G*self.sigma0Value(i)*self.p)
+					   * self.m**2*self.OmegaValue(i)**2/(2*pi*G*self.sigma0Value(i)*self.p)
 			return summand1 + summand2 + summand3 + summand4 + summand5 + summand6
 		else:
 			summand1 = self.fA0(i, k) * self.x1(i, k)
@@ -590,14 +610,14 @@ class WMatrix(object):
 	def calcW2_ik(self, i, k):
 		if i==0:
 			return - self.delta(1, self.m) *3/2*self.OmegaValue(i)*self.rValue(i)**3\
-			       *self.jValue(i, k)/(G*(self.mStar+self.mDisk))
+				   *self.jValue(i, k)/(G*(self.mStar+self.mDisk))
 		elif i==self.number-1:
 			summand1 = -self.delta(1, self.m)*3*self.OmegaValue(i)*self.rValue(i)**3\
-			           *self.jValue(i, k)/(2*G*(self.mStar+self.mDisk))
+					   *self.jValue(i, k)/(2*G*(self.mStar+self.mDisk))
 			summand2 = - self.m * self.OmegaValue(i) * self.rValue(i) * (-1) \
-			           * self.delta(i, k)/(2*pi*G*self.p*self.sigma0Value(i))
+					   * self.delta(i, k)/(2*pi*G*self.p*self.sigma0Value(i))
 			summand3 = self.rValue(i)*self.delta(i, k)*2*self.m*self.OmegaValue(i)\
-			           /(2*pi*G*self.p*self.sigma0Value(i))
+					   /(2*pi*G*self.p*self.sigma0Value(i))
 			return summand1 + summand2 + summand3
 		else:
 			summand1 = self.fA0(i, k)
@@ -612,7 +632,7 @@ class WMatrix(object):
 		if i==0:
 			return self.delta(1, self.m)*self.rValue(i)**3*self.jValue(i, k)/(2*G*(self.mStar + self.mDisk))
 		elif i==self.number-1:
-			summand1 = (self.delta(1, self.m)*self.rValue(i)**3*self.jValue(i, j))/(2*G*(self.mStar+self.mDisk))
+			summand1 = (self.delta(1, self.m)*self.rValue(i)**3*self.jValue(i, k))/(2*G*(self.mStar+self.mDisk))
 			summand2 = (self.rValue(i)*self.delta(i, k)*(-1))/(2*pi*G*self.sigma0Value(i)*self.p)
 			return summand1 + summand2
 		else:
