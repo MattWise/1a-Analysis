@@ -4,6 +4,7 @@ import Functions, LinAl, Params
 import numpy as np
 import multiprocessing
 import time as t
+import sys
 
 import matplotlib.pyplot as plt
 
@@ -38,6 +39,12 @@ def init():
 	wM.initB14C()
 
 init()
+
+sizeB14a = wM.B14A.nbytes
+sizeB14c = wM.B14C.nbytes
+
+print("size(B14a)=", sizeB14a)
+print("size(B14c)=", sizeB14c)
 
 eigSol = LinAl.EigenvalueSolver(wM)
 
