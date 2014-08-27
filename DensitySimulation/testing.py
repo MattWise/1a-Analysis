@@ -7,7 +7,6 @@ import time as t
 
 import matplotlib.pyplot as plt
 
-
 def timing(function):
 	timeStart = t.clock()
 	function()
@@ -18,6 +17,7 @@ def timing(function):
 
 iP = Params.InitialParameters(number=100)
 dC = Params.DerivedConstants(iP)
+
 
 anaFcts = Functions.AnalyticalFunctions(iP, dC)
 
@@ -40,6 +40,8 @@ def init():
 init()
 
 eigSol = LinAl.EigenvalueSolver(wM)
+
+
 
 eigSol.initEigen()
 
@@ -65,5 +67,6 @@ print("imagLen=" + str(len(img)))
 print(min(real), max(real))
 print(min(img), max(img))
 
-plt.scatter(real[4:],img[4:])
+# plt.scatter(real[4:],img[4:])
+plt.scatter(real, img)
 plt.show()

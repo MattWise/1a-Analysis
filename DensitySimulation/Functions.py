@@ -19,25 +19,28 @@ class AnalyticalFunctions(object):
 		self.iP = iP
 		self.dC = dC
 
-	""" unperturbed surface density sigma0. uses sigmaStar. definition page 964, 23a.
+	""" unperturbed surface density gSigma0. uses gSigma0Star. definition page 964, 23a.
 	"""
-	def sigma0(self,r):
-		return np.complex128(self.dC.sigmaStar*(self.iP.rStar/float(r))**self.iP.p)
+	def gSigma0(self,r):
+		return np.complex128(self.dC.gSigma0Star*(1/float(r))**self.iP.p)
 
-	"""first derivative of surface density sigma0. Calculated analytically.
+	"""first derivative of surface density gSigma0. Calculated analytically.
 	"""
-	def Dsigma0(self,r):
-		return np.complex128((-self.iP.p*self.dC.sigmaStar*self.iP.rStar**self.iP.p)/(r**(self.iP.p+1)))
+	def DgSigma0(self,r):
+		return np.complex128(
+			(-self.iP.p*self.dC.gSigma0Star)
+		                     /(float(r)**(self.iP.p+1))
+		)
 
 	""" sound speed in the disk. definition page 964 before 23a in the bulk block of text.
 	"""
 	def a0(self,r):
-		return np.complex128(self.iP.a0Star*float(r)**(-self.iP.q/2))
+		return np.complex128(self.dC.a0Star*float(r)**(-self.iP.q/2))
 
 	""" the capital sigma. definition page 961, 1c
 	"""
 	def Sigma(self,r):
-		return np.complex128((2*m.pi*constants.G*self.sigma0(float(r)))/(self.a0(float(r))**2))
+		return np.complex128((2*constants.pi*self.gSigma0(r))/(self.a0(r)**2))
 
 
 """ this class represents everything we have in a discrete manner: discretized analytic functions and discrete
@@ -62,8 +65,8 @@ class DiscreteFunctions(object):
 		# the former analytic functions: will be numpy arrays
 		self.a0Discrete = None
 		self.SigmaDiscrete = None
-		self.sigma0Discrete = None
-		self.Dsigma0Discrete=None
+		self.gSigma0Discrete = None
+		self.DgSigma0Discrete=None
 		# the discrete functions right from the beginning
 		self.Omega = None
 		self.DOmega=None
@@ -97,29 +100,29 @@ class DiscreteFunctions(object):
 
 			def psi_star(r):
 				#Equation A2 solved for omega star. Modified to use softened gravity.
-				return -constants.G*self.iP.mStar/(r+self.iP.eta)
+				return -1/(r+self.iP.eta)
 
 			def psi_disk(r):
 				#Equation A3 and A5. Softened gravity used throughout.
 
 				def func(phi,x,r):
 					#integrand from A3 and A5.
-					return (constants.G*self.analyticFunctions.sigma0(r*x)*x)/(1+(x**2)-2*x*m.cos(phi)+self.iP.eta**2)**-.5
+					return (self.analyticFunctions.gSigma0(r*x)*x)/(1+(x**2)-2*x*m.cos(phi)+self.iP.eta**2)**-.5
 
 				def upper_bound(x):
 					return float(2*m.pi)
 				def lower_bound(x):
 					return float(0)
 
-				return r*-(dblquad(func,self.iP.rStar/r,self.iP.rDisk/r,lower_bound,upper_bound,args=(r,))[0])
+				return r*-(dblquad(func,1/r,self.iP.rRatio/r,lower_bound,upper_bound,args=(r,))[0])
 
 			return np.complex128((psi_star(r)+psi_disk(r)/r))
 
 		def psi_pressure(r):
 			#Equation A4
 			#Actually first derivative with respect to r of psi pressure
-			A=(self.analyticFunctions.a0(r)**2)/self.analyticFunctions.sigma0(r) #a_0^2/sigma_0 term
-			B=(-self.iP.p*self.dC.sigmaStar*self.iP.rStar**self.iP.p)/r**(self.iP.p+1) #d sigma_0/dr term
+			A=(self.analyticFunctions.a0(r)**2)/self.analyticFunctions.gSigma0(r) #a_0^2/sigma_0 term
+			B=self.analyticFunctions.DgSigma0(r)
 			return A*B
 
 		psi_grav_discrete=self.linAlg.firstDerivative(self.discretizer(psi_grav))
@@ -146,17 +149,24 @@ class DiscreteFunctions(object):
 	def calcKappa(self):
 		array=np.zeros(self.iP.number, dtype=np.complex128)
 		for index,r in enumerate(self.dC.radialCells.rValues):
-			array[index]=np.complex128(4*self.Omega[index]**2+2*r*self.Omega[index]*self.DOmega[index])
+			array[index]=np.complex128(
+				4*self.Omega[index]**2
+				+2*r*self.Omega[index]*self.DOmega[index]
+			)
 		return sqrt(array)
 
 	"""	Calculates the first derivative of kappa analytically. As kappa is dependent on omega, which is discrete, the result is also discrete. Returns vector with
 	components equaling value at each cell.
 	"""
 	def calcDKappa(self):
-		array1=(.5*self.kappa)**-1
+		array1=(self.kappa)**-1.0
 		array2=np.zeros(self.iP.number, dtype=np.complex128)
 		for index,r in enumerate(self.dC.radialCells.rValues):
-			array2[index]=np.complex128(10*self.Omega[index]*self.DOmega[index]+2*r*self.DOmega[index]**2+2*r*self.Omega[index]*self.DDOmega[index])
+			array2[index]=np.complex128(
+				5*self.Omega[index]*self.DOmega[index]
+				+r*self.DOmega[index]**2
+				+r*self.Omega[index]*self.DDOmega[index]
+			)
 		return array1*array2
 
 	# ============== init discretized fields ==============
@@ -181,24 +191,24 @@ class DiscreteFunctions(object):
 			raise BaseException("Sigma already initialized")
 
 	""" call this function in order to initialize the discrete values for
-	 sigma0. if already initialized, an error is raised.
+	 gSigma0. if already initialized, an error is raised.
 	uses the discretizer acting upon the analytic function.
 	"""
 	def initSigma0Discrete(self):
-		if self.sigma0Discrete == None:
-			self.sigma0Discrete = self.discretizer(self.analyticFunctions.sigma0)
+		if self.gSigma0Discrete == None:
+			self.gSigma0Discrete = self.discretizer(self.analyticFunctions.gSigma0)
 		else:
-			raise BaseException("sigma0 already initialized")
+			raise BaseException("gSigma0 already initialized")
 
 	"""call this function in order to initialize the discrete values for
-	 the first derivative of sigma0. if already initialized, an error is raised.
+	 the first derivative of gSigma0. if already initialized, an error is raised.
 	uses the discretizer acting upon the analytic function.
 	"""
 	def initDSigma0Discrete(self):
-		if self.Dsigma0Discrete == None:
-			self.Dsigma0Discrete = self.discretizer(self.analyticFunctions.Dsigma0)
+		if self.DgSigma0Discrete == None:
+			self.DgSigma0Discrete = self.discretizer(self.analyticFunctions.DgSigma0)
 		else:
-			raise BaseException("Dsigma0 already initialized")
+			raise BaseException("DgSigma0 already initialized")
 
 	""" call this function in order to initialize the discrete values for
 	capital Omega. if already initialized, an error is raised.
@@ -277,7 +287,7 @@ class DiscreteFunctions(object):
 
 	# ======================== Init Function ========================
 	""" call this function in order to initialize the discrete values for
-	all functions (i.e.: kappa, Omega, sigma0, sigma, a0).
+	all functions (i.e.: kappa, Omega, gSigma0, sigma, a0).
 	"""
 	def init(self):
 		self.initLDMOne()
