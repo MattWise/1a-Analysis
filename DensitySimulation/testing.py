@@ -15,7 +15,7 @@ def timing(function):
 
 # todo: number=10 -> complexWarning, unclear why.
 
-iP = Params.InitialParameters(number=100)
+iP = Params.InitialParameters(number=10)
 dC = Params.DerivedConstants(iP)
 
 
@@ -69,4 +69,9 @@ print(min(img), max(img))
 
 # plt.scatter(real[4:],img[4:])
 plt.scatter(real, img)
+plt.grid(True)
+plt.xlabel("realpart")
+plt.ylabel("imagpart")
+plt.xlim(-10, 10)
+plt.ylim(-10, 10)
 plt.show()

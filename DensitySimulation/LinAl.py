@@ -171,7 +171,7 @@ class WMatrix(object):
 		self.dF = discreteFunctions
 		self.dFfullyInitialized = not (self.dF.a0Discrete == None
 									   or self.dF.SigmaDiscrete == None
-									   or self.dF.sigma0Discrete == None
+									   or self.dF.gSigma0Discrete == None
 									   or self.dF.Omega == None
 									   or self.dF.kappa == None)
 		# access to important fields
@@ -262,7 +262,9 @@ class WMatrix(object):
 						 or self.W4 == None
 						 or self.W5 == None)\
 				and self.dFfullyInitialized:
+			print("initB14A(): start")
 			self.B14A = self.__calcB14A()
+			print("initB14A(): end")
 		else: raise BaseException("initB14A(): already, W# not or DiscreteFunctions passed not fully initialized")
 
 
@@ -275,7 +277,9 @@ class WMatrix(object):
 						 or self.W4 == None
 						 or self.W5 == None)\
 				and self.dFfullyInitialized:
+			print("initB14C(): start")
 			self.B14C = self.__calcB14C()
+			print("initB14C(): end")
 		else: raise BaseException("initB14C(): already, W# not or DiscreteFunctions passed not fully initialized")
 
 	# ======================
@@ -286,8 +290,7 @@ class WMatrix(object):
 		res = np.zeros((self.number, self.number), dtype=np.complex128)
 		for i in np.arange(self.number):
 			for k in np.arange(self.number):
-				element = self.calcW0_ik(i, k)
-				res[i][k] = element
+				res[i][k] = self.calcW0_ik(i, k)
 		return res
 
 	def __calcW1(self):
@@ -326,7 +329,6 @@ class WMatrix(object):
 		return res
 
 	def __calcB14A(self):
-		print("Creating B14A Matrix...")
 		zeros=np.zeros((self.number,self.number),dtype=np.complex128)
 		I=np.identity(self.number,dtype=np.complex128)
 		C1=np.concatenate((-1*self.W0,zeros,zeros,zeros,zeros),0)
@@ -335,13 +337,10 @@ class WMatrix(object):
 		C4=np.concatenate((zeros,zeros,zeros,I,zeros),0)
 		C5=np.concatenate((zeros,zeros,zeros,zeros,I),0)
 		columns=(C1,C2,C3,C4,C5)
-		print("Stage 1 complete...")
 		array=np.concatenate(columns,1)
-		print("Done.")
 		return array
 
 	def __calcB14C(self):
-		print("Creating B14C Matrix...")
 		zeros=np.zeros((self.number,self.number),dtype=np.complex128)
 		I=np.identity(self.number,dtype=np.complex128)
 		C1=np.concatenate((self.W1,self.W5,self.W4,self.W3,self.W2),0)
@@ -350,9 +349,7 @@ class WMatrix(object):
 		C4=np.concatenate((zeros,zeros,zeros,zeros,I),0)
 		C5=np.concatenate((I,zeros,zeros,zeros,zeros),0)
 		columns=(C1,C2,C3,C4,C5)
-		print("Stage 1 complete...")
 		array=np.concatenate(columns,1)
-		print("Done.")
 		return array
 
 
@@ -361,14 +358,10 @@ class WMatrix(object):
 	# ==============================
 
 	def delta(self, i, j):
-		res = None
-		if i == j: res = 1
-		else: res = 0
-		return res
+		return int(i==j)
 
 	def rValue(self, i):
-		rVals = self.dF.dC.radialCells.rValues
-		return rVals[i]
+		return self.dF.dC.radialCells.rValues[i]
 
 	def d1Value(self, i, j):
 		return self.dF.linAlg.logDerivationMatrixOne[i][j]
@@ -383,10 +376,10 @@ class WMatrix(object):
 		return self.dF.SigmaDiscrete[i]
 
 	def gSigma0Value(self, i):
-		return self.dF.sigma0Discrete[i]
+		return self.dF.gSigma0Discrete[i]
 
 	def DgSigma0Value(self,i):
-		return self.dF.sigma0Discrete[i]
+		return self.dF.DgSigma0Discrete[i]
 
 	def kappaValue(self, i):
 		return self.dF.kappa[i]
@@ -410,12 +403,11 @@ class WMatrix(object):
 			res += function1(i, j) * function2(j, k)
 		return res
 
-
 	# ======================================
 	# component functions:
 	# see calculations for further detail
 	# ======================================
-	# todo: evaluate the kronecker delta by using if -> might be faster!
+	# todo: evaluate the kronecker delta by using if -> might be faster but worse to read.
 
 	def fA0(self, i, k):
 		summand1 = self.rValue(i) * self.einsum(self.d1Value, self.jValue, i, k)
@@ -439,53 +431,64 @@ class WMatrix(object):
 
 	def x0(self, i, k):
 		denominator=self.rValue(i)*self.kappaValue(i)**3*self.gSigma0Value(i)
-		term1=(self.m*self.OmegaValue(i)*(self.gSigma0Value(i)+self.rValue(i)*self.DgSigma0Value(i)))
-		term2part1=-self.kappaValue(i)**2+self.m**2*self.OmegaValue(i)**2
-		term2part2=2*self.rValue(i)*self.kappaValue(i)*self.gSigma0Value(i)*self.DkappaValue(i)
-		term2part3=-2*self.m**2*self.rValue(i)*self.gSigma0Value(i)*self.OmegaValue(i)*self.DOmegaValue(i)
-		return term1*(term2part1+term2part2+term2part3)/denominator
+		summand1 = self.DgSigma0Value(i)*self.rValue(i)*(self.m**2*self.OmegaValue(i)**2-self.kappaValue(i)**2)
+		summand2 = self.gSigma0Value(i)*\
+					(\
+						-self.kappaValue(i)**2\
+						+2*self.kappaValue(i)*self.DkappaValue(i)*self.rValue(i)\
+						+self.m**2*self.OmegaValue(i)*(self.OmegaValue(i)-2*self.DOmegaValue(i)*self.rValue(i))
+					)
+		return self.m*self.OmegaValue(i)*(\
+			summand1 + summand2\
+			)/denominator
 
 	def x1(self, i, k):
 		denominator=self.rValue(i)*self.kappaValue(i)**3*self.gSigma0Value(i)
-		term1=self.gSigma0Value(i)+self.rValue(i)*self.DgSigma0Value(i)
-		term2part1=self.kappaValue(i)**2-3*self.m**2*self.OmegaValue(i)**2
-		term2part2=-2*self.rValue(i)*self.kappaValue(i)*self.gSigma0Value(i)*self.DkappaValue(i)
-		term2part3=-4*self.m**2*self.rValue(i)*self.gSigma0Value(i)*self.OmegaValue(i)*self.DOmegaValue(i)
-		return term1*(term2part1+term2part2+term2part3)/denominator
+		summand1 = self.DgSigma0Value(i)*(self.kappaValue(i)**2-3*self.m**2*self.OmegaValue(i)**2)*self.rValue(i)
+		summand2 = self.gSigma0Value(i)*(\
+			self.kappaValue(i)**2\
+		    -2*self.kappaValue(i)*self.DkappaValue(i)*self.rValue(i)
+		    +self.m**2*self.OmegaValue(i)*(-3*self.OmegaValue(i)+4*self.DOmegaValue(i)*self.rValue(i))
+			)
+		return (summand1 + summand2)/denominator
 
 	def x2(self, i, k):
 		denominator=self.rValue(i)*self.kappaValue(i)**3*self.gSigma0Value(i)
-		term1=(self.gSigma0Value(i)+self.rValue(i)*self.DgSigma0Value(i))*self.m
-		term2=3*self.OmegaValue(i)-2*self.rValue(i)*self.gSigma0Value(i)*self.DOmegaValue(i)
-		return term1*term2/denominator
+		summand1 = 3*self.DgSigma0Value(i)*self.OmegaValue(i)*self.rValue(i)
+		summand2 = 3*self.OmegaValue(i)*self.gSigma0Value(i)
+		summand3 = -2*self.DOmegaValue(i)*self.rValue(i)*self.gSigma0Value(i)
+		return self.m*(summand1 + summand2 + summand3)/denominator
 
 	def x3(self, i, k):
 		numerator=self.gSigma0Value(i)+self.rValue(i)*self.DgSigma0Value(i)
 		denominator=self.rValue(i)*self.kappaValue(i)**3*self.gSigma0Value(i)
-		return numerator/denominator
+		return -numerator/denominator
 
 	def y0(self, i, k):
-		term1=self.m*self.OmegaValue(i)*(4*self.rValue(i)*self.kappaValue(i)*self.gSigma0Value(i)*self.DkappaValue(i))
-		term2part1=self.m*self.OmegaValue(i)*(self.kappaValue(i)-self.m*self.OmegaValue(i))
-		term2part2=self.kappaValue(i)+self.m*self.OmegaValue(i)
-		term2part3=self.m**2*self.gSigma0Value(i)-2*self.rValue(i)*self.DgSigma0Value(i)
-		term3=-2*self.m*self.rValue(i)*self.gSigma0Value(i)*self.DOmegaValue(i)*(self.kappaValue(i)**2+self.m**2*self.OmegaValue(i)**2)
+		summand1 = 2*self.DgSigma0Value(i)*self.OmegaValue(i)*self.rValue(i)\
+		           *(self.m**2*self.OmegaValue(i)**2-self.kappaValue(i)**2)
+		summand2 = self.gSigma0Value(i)*(\
+			4*self.DkappaValue(i)*self.kappaValue(i)*self.OmegaValue(i)*self.rValue(i)\
+			+ self.kappaValue(i)**2*(self.m**2*self.OmegaValue(i)-2*self.DOmegaValue(i)*self.rValue(i))\
+			- self.m**2*self.OmegaValue(i)**2*(self.m**2*self.OmegaValue(i)+2*self.rValue(i)*self.DOmegaValue(i))\
+			)
 		denominator=self.rValue(i)**2*self.kappaValue(i)**3*self.gSigma0Value(i)
-		return term1*(term2part1+term2part2+term2part3)*term3/denominator
+		return self.m*(summand1 + summand2)/denominator
 
 	def y1(self, i, k):
-		term1=self.m**2
-		term2part1=-self.kappaValue(i)**2*self.gSigma0Value(i)
-		term2part2=3*self.m**2*self.gSigma0Value(i)*self.OmegaValue(i)**2
-		term2part3=-4*self.rValue(i)*self.OmegaValue(i)**2*self.DgSigma0Value(i)
-		denominator=self.rValue(i)**2*self.kappaValue(i)**3*self.gSigma0Value(i)
+		term1 = self.m**2
+		term2part1 = -self.kappaValue(i)**2*self.gSigma0Value(i)
+		term2part2 = 3*self.m**2*self.gSigma0Value(i)*self.OmegaValue(i)**2
+		term2part3 = -4*self.rValue(i)*self.OmegaValue(i)**2*self.DgSigma0Value(i)
+		denominator = self.rValue(i)**2*self.kappaValue(i)**3*self.gSigma0Value(i)
 		return term1*(term2part1+term2part2+term2part3)/denominator
 
 	def y2(self, i, k):
-		term1=-3*self.m**3*self.gSigma0Value(i)*self.OmegaValue(i)
-		term2=2*self.m*self.rValue(i)*(self.DOmegaValue(i)*self.gSigma0Value(i)+self.DgSigma0Value(i)*self.OmegaValue(i))
+		term1 = 2*self.DgSigma0Value(i)*self.OmegaValue(i)*self.rValue(i)
+		term2 = -3*self.m**2*self.OmegaValue(i)*self.gSigma0Value(i)
+		term3 = 2*self.DOmegaValue(i)*self.rValue(i)*self.gSigma0Value(i)
 		denominator=self.rValue(i)**2*self.kappaValue(i)**3*self.gSigma0Value(i)
-		return (term1+term2)/denominator
+		return self.m*(term1+term2+term3)/denominator
 
 	def y3(self, i, k):
 		numerator=self.m**2
