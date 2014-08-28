@@ -58,7 +58,6 @@ class LinearAlgebraFunctions(object):
 
 		#creates a differentiation matrix for numerical differentiation. "Order=1" means first derivative, "order=2" means second.
 
-
 		def diagonals(array,a,b,value):
 			#goes down diagonal form specified coordinates, setting each to value.
 			if a>b:
@@ -70,7 +69,6 @@ class LinearAlgebraFunctions(object):
 				a+=1
 				b+=1
 			return array
-
 
 		def setBoundary(array,dimension,innerBoundary,outerBoundary):
 			#sets the matrix boundary conditions. Defaults are from ARS paper.
@@ -173,16 +171,15 @@ class WMatrix(object):
 		self.dF = discreteFunctions
 		self.dFfullyInitialized = not (self.dF.a0Discrete == None
 									   or self.dF.SigmaDiscrete == None
-									   or self.dF.sigma0Discrete == None
+									   or self.dF.gSigma0Discrete == None
 									   or self.dF.Omega == None
 									   or self.dF.kappa == None)
 		# access to important fields
 		self.m = self.dF.iP.m
 		self.p = self.dF.iP.p
 		self.q = self.dF.iP.q
-		self.mDisk = self.dF.iP.mDisk
-		self.mStar = self.dF.iP.mStar
-		self.number = self.dF.iP.number		
+		self.mRatio = self.dF.iP.mRatio
+		self.number = self.dF.iP.number
 		# the W composition in powers of omega
 		self.W0 = None
 		self.W1 = None
@@ -198,8 +195,7 @@ class WMatrix(object):
 	# ===============
 
 	def init(self):
-
-		#todo parallel?
+		# todo: parallel?
 		self.initW0()
 		self.initW1()
 		self.initW2()
@@ -266,7 +262,9 @@ class WMatrix(object):
 						 or self.W4 == None
 						 or self.W5 == None)\
 				and self.dFfullyInitialized:
+			print("initB14A(): start")
 			self.B14A = self.__calcB14A()
+			print("initB14A(): end")
 		else: raise BaseException("initB14A(): already, W# not or DiscreteFunctions passed not fully initialized")
 
 
@@ -279,8 +277,10 @@ class WMatrix(object):
 						 or self.W4 == None
 						 or self.W5 == None)\
 				and self.dFfullyInitialized:
+			print("initB14C(): start")
 			self.B14C = self.__calcB14C()
-		else: raise BaseException("initB14A(): already, W# not or DiscreteFunctions passed not fully initialized")
+			print("initB14C(): end")
+		else: raise BaseException("initB14C(): already, W# not or DiscreteFunctions passed not fully initialized")
 
 	# ======================
 	# calculating functions
@@ -290,8 +290,7 @@ class WMatrix(object):
 		res = np.zeros((self.number, self.number), dtype=np.complex128)
 		for i in np.arange(self.number):
 			for k in np.arange(self.number):
-				element = self.calcW0_ik(i, k)
-				res[i][k] = element
+				res[i][k] = self.calcW0_ik(i, k)
 		return res
 
 	def __calcW1(self):
@@ -330,7 +329,6 @@ class WMatrix(object):
 		return res
 
 	def __calcB14A(self):
-		print("Creating B14A Matrix...")
 		zeros=np.zeros((self.number,self.number),dtype=np.complex128)
 		I=np.identity(self.number,dtype=np.complex128)
 		C1=np.concatenate((-1*self.W0,zeros,zeros,zeros,zeros),0)
@@ -339,13 +337,10 @@ class WMatrix(object):
 		C4=np.concatenate((zeros,zeros,zeros,I,zeros),0)
 		C5=np.concatenate((zeros,zeros,zeros,zeros,I),0)
 		columns=(C1,C2,C3,C4,C5)
-		print("Stage 1 complete...")
 		array=np.concatenate(columns,1)
-		print("Done.")
 		return array
 
 	def __calcB14C(self):
-		print("Creating B14C Matrix...")
 		zeros=np.zeros((self.number,self.number),dtype=np.complex128)
 		I=np.identity(self.number,dtype=np.complex128)
 		C1=np.concatenate((self.W1,self.W5,self.W4,self.W3,self.W2),0)
@@ -354,9 +349,7 @@ class WMatrix(object):
 		C4=np.concatenate((zeros,zeros,zeros,zeros,I),0)
 		C5=np.concatenate((I,zeros,zeros,zeros,zeros),0)
 		columns=(C1,C2,C3,C4,C5)
-		print("Stage 1 complete...")
 		array=np.concatenate(columns,1)
-		print("Done.")
 		return array
 
 
@@ -365,14 +358,10 @@ class WMatrix(object):
 	# ==============================
 
 	def delta(self, i, j):
-		res = None
-		if i == j: res = 1
-		else: res = 0
-		return res
+		return int(i==j)
 
 	def rValue(self, i):
-		rVals = self.dF.dC.radialCells.rValues
-		return rVals[i]
+		return self.dF.dC.radialCells.rValues[i]
 
 	def d1Value(self, i, j):
 		return self.dF.linAlg.logDerivationMatrixOne[i][j]
@@ -386,11 +375,11 @@ class WMatrix(object):
 	def SigmaValue(self, i):
 		return self.dF.SigmaDiscrete[i]
 
-	def sigma0Value(self, i):
-		return self.dF.sigma0Discrete[i]
+	def gSigma0Value(self, i):
+		return self.dF.gSigma0Discrete[i]
 
-	def Dsigma0Value(self,i):
-		return self.dF.sigma0Discrete[i]
+	def DgSigma0Value(self,i):
+		return self.dF.DgSigma0Discrete[i]
 
 	def kappaValue(self, i):
 		return self.dF.kappa[i]
@@ -414,23 +403,22 @@ class WMatrix(object):
 			res += function1(i, j) * function2(j, k)
 		return res
 
-
 	# ======================================
 	# component functions:
 	# see calculations for further detail
 	# ======================================
-	# todo: evaluate the kronecker delta by using if -> might be faster!
+	# todo: evaluate the kronecker delta by using if -> might be faster but worse to read.
 
 	def fA0(self, i, k):
 		summand1 = self.rValue(i) * self.einsum(self.d1Value, self.jValue, i, k)
-		summand2 = self.d1Value(i, k)/(self.sigma0Value(i))
-		summand3 = - self.q*self.delta(i, k)/(self.sigma0Value(i))
+		summand2 = self.d1Value(i, k)/(self.gSigma0Value(i))
+		summand3 = - self.q*self.delta(i, k)/(self.gSigma0Value(i))
 		summand4 = self.rValue(i)*(1-self.p)*self.einsum(self.delta, self.jValue, i, k)
 		return summand1 + summand2 + summand3 + summand4
 
 	def fA2(self,i, k):
 		return self.delta(1, self.m) * self.rValue(i)**4/2\
-			   *(self.jValue(i, k))/(G*(self.mStar+self.mDisk))
+			   *(self.jValue(i, k))/(1+self.mRatio)
 
 	def fB0(self, i, k):
 		summand1 = self.rValue(i)**2*self.einsum(self.delta, self.jValue, i, k)
@@ -439,57 +427,68 @@ class WMatrix(object):
 
 	def fB2(self, i, k):
 		return self.delta(1, self.m) * self.rValue(i)**5/2\
-			   *(self.jValue(i, k))/(G*(self.mStar+self.mDisk))
+			   *(self.jValue(i, k))/(1+self.mRatio)
 
 	def x0(self, i, k):
-		denominator=self.rValue(i)*self.kappaValue(i)**3*self.sigma0Value(i)
-		term1=(self.m*self.OmegaValue(i)*(self.sigma0Value(i)+self.rValue(i)*self.Dsigma0Value(i)))
-		term2part1=-self.kappaValue(i)**2+self.m**2*self.OmegaValue(i)**2
-		term2part2=2*self.rValue(i)*self.kappaValue(i)*self.sigma0Value(i)*self.DkappaValue(i)
-		term2part3=-2*self.m**2*self.rValue(i)*self.sigma0Value(i)*self.OmegaValue(i)*self.DOmegaValue(i)
-		return term1*(term2part1+term2part2+term2part3)/denominator
+		denominator=self.rValue(i)*self.kappaValue(i)**3*self.gSigma0Value(i)
+		summand1 = self.DgSigma0Value(i)*self.rValue(i)*(self.m**2*self.OmegaValue(i)**2-self.kappaValue(i)**2)
+		summand2 = self.gSigma0Value(i)*\
+					(\
+						-self.kappaValue(i)**2\
+						+2*self.kappaValue(i)*self.DkappaValue(i)*self.rValue(i)\
+						+self.m**2*self.OmegaValue(i)*(self.OmegaValue(i)-2*self.DOmegaValue(i)*self.rValue(i))
+					)
+		return self.m*self.OmegaValue(i)*(\
+			summand1 + summand2\
+			)/denominator
 
 	def x1(self, i, k):
-		denominator=self.rValue(i)*self.kappaValue(i)**3*self.sigma0Value(i)
-		term1=self.sigma0Value(i)+self.rValue(i)*self.Dsigma0Value(i)
-		term2part1=self.kappaValue(i)**2-3*self.m**2*self.OmegaValue(i)**2
-		term2part2=-2*self.rValue(i)*self.kappaValue(i)*self.sigma0Value(i)*self.DkappaValue(i)
-		term2part3=-4*self.m**2*self.rValue(i)*self.sigma0Value(i)*self.OmegaValue(i)*self.DOmegaValue(i)
-		return term1*(term2part1+term2part2+term2part3)/denominator
+		denominator=self.rValue(i)*self.kappaValue(i)**3*self.gSigma0Value(i)
+		summand1 = self.DgSigma0Value(i)*(self.kappaValue(i)**2-3*self.m**2*self.OmegaValue(i)**2)*self.rValue(i)
+		summand2 = self.gSigma0Value(i)*(\
+			self.kappaValue(i)**2\
+		    -2*self.kappaValue(i)*self.DkappaValue(i)*self.rValue(i)
+		    +self.m**2*self.OmegaValue(i)*(-3*self.OmegaValue(i)+4*self.DOmegaValue(i)*self.rValue(i))
+			)
+		return (summand1 + summand2)/denominator
 
 	def x2(self, i, k):
-		denominator=self.rValue(i)*self.kappaValue(i)**3*self.sigma0Value(i)
-		term1=(self.sigma0Value(i)+self.rValue(i)*self.Dsigma0Value(i))*self.m
-		term2=3*self.OmegaValue(i)-2*self.rValue(i)*self.sigma0Value(i)*self.DOmegaValue(i)
-		return term1*term2/denominator
+		denominator=self.rValue(i)*self.kappaValue(i)**3*self.gSigma0Value(i)
+		summand1 = 3*self.DgSigma0Value(i)*self.OmegaValue(i)*self.rValue(i)
+		summand2 = 3*self.OmegaValue(i)*self.gSigma0Value(i)
+		summand3 = -2*self.DOmegaValue(i)*self.rValue(i)*self.gSigma0Value(i)
+		return self.m*(summand1 + summand2 + summand3)/denominator
 
 	def x3(self, i, k):
-		numerator=self.sigma0Value(i)+self.rValue(i)*self.Dsigma0Value(i)
-		denominator=self.rValue(i)*self.kappaValue(i)**3*self.sigma0Value(i)
-		return numerator/denominator
+		numerator=self.gSigma0Value(i)+self.rValue(i)*self.DgSigma0Value(i)
+		denominator=self.rValue(i)*self.kappaValue(i)**3*self.gSigma0Value(i)
+		return -numerator/denominator
 
 	def y0(self, i, k):
-		term1=self.m*self.OmegaValue(i)*(4*self.rValue(i)*self.kappaValue(i)*self.sigma0Value(i)*self.DkappaValue(i))
-		term2part1=self.m*self.OmegaValue(i)*(self.kappaValue(i)-self.m*self.OmegaValue(i))
-		term2part2=self.kappaValue(i)+self.m*self.OmegaValue(i)
-		term2part3=self.m**2*self.sigma0Value(i)-2*self.rValue(i)*self.Dsigma0Value(i)
-		term3=-2*self.m*self.rValue(i)*self.sigma0Value(i)*self.DOmegaValue(i)*(self.kappaValue(i)**2+self.m**2*self.OmegaValue(i)**2)
-		denominator=self.rValue(i)**2*self.kappaValue(i)**3*self.sigma0Value(i)
-		return term1*(term2part1+term2part2+term2part3)*term3/denominator
+		summand1 = 2*self.DgSigma0Value(i)*self.OmegaValue(i)*self.rValue(i)\
+		           *(self.m**2*self.OmegaValue(i)**2-self.kappaValue(i)**2)
+		summand2 = self.gSigma0Value(i)*(\
+			4*self.DkappaValue(i)*self.kappaValue(i)*self.OmegaValue(i)*self.rValue(i)\
+			+ self.kappaValue(i)**2*(self.m**2*self.OmegaValue(i)-2*self.DOmegaValue(i)*self.rValue(i))\
+			- self.m**2*self.OmegaValue(i)**2*(self.m**2*self.OmegaValue(i)+2*self.rValue(i)*self.DOmegaValue(i))\
+			)
+		denominator=self.rValue(i)**2*self.kappaValue(i)**3*self.gSigma0Value(i)
+		return self.m*(summand1 + summand2)/denominator
 
 	def y1(self, i, k):
-		term1=self.m**2
-		term2part1=-self.kappaValue(i)**2*self.sigma0Value(i)
-		term2part2=3*self.m**2*self.sigma0Value(i)*self.OmegaValue(i)**2
-		term2part3=-4*self.rValue(i)*self.OmegaValue(i)**2*self.Dsigma0Value(i)
-		denominator=self.rValue(i)**2*self.kappaValue(i)**3*self.sigma0Value(i)
+		term1 = self.m**2
+		term2part1 = -self.kappaValue(i)**2*self.gSigma0Value(i)
+		term2part2 = 3*self.m**2*self.gSigma0Value(i)*self.OmegaValue(i)**2
+		term2part3 = -4*self.rValue(i)*self.OmegaValue(i)**2*self.DgSigma0Value(i)
+		denominator = self.rValue(i)**2*self.kappaValue(i)**3*self.gSigma0Value(i)
 		return term1*(term2part1+term2part2+term2part3)/denominator
 
 	def y2(self, i, k):
-		term1=-3*self.m**3*self.sigma0Value(i)*self.OmegaValue(i)
-		term2=2*self.m*self.rValue(i)*(self.DOmegaValue(i)*self.sigma0Value(i)+self.Dsigma0Value(i)*self.OmegaValue(i))
-		denominator=self.rValue(i)**2*self.kappaValue(i)**3*self.sigma0Value(i)
-		return (term1+term2)/denominator
+		term1 = 2*self.DgSigma0Value(i)*self.OmegaValue(i)*self.rValue(i)
+		term2 = -3*self.m**2*self.OmegaValue(i)*self.gSigma0Value(i)
+		term3 = 2*self.DOmegaValue(i)*self.rValue(i)*self.gSigma0Value(i)
+		denominator=self.rValue(i)**2*self.kappaValue(i)**3*self.gSigma0Value(i)
+		return self.m*(term1+term2+term3)/denominator
 
 	def y3(self, i, k):
 		numerator=self.m**2
@@ -501,10 +500,10 @@ class WMatrix(object):
 		summand2 = 2*(1-self.p)*self.einsum(self.d1Value, self.jValue, i, k)
 		summand3 = - self.einsum(self.d1Value, self.jValue, i, k)
 		summand4 = self.p*(self.p-1)*self.einsum(self.delta, self.jValue, i, k)
-		summand5 = self.d2Value(i, k)/(self.rValue(i)*self.sigma0Value(i))
-		summand6 = - 2*self.q*self.d1Value(i, k)/(self.rValue(i)*self.sigma0Value(i))
-		summand7 = - self.d1Value(i, k)/(self.rValue(i)*self.sigma0Value(i))
-		summand8 = self.q*(self.q+1)*self.delta(i, k)/(self.rValue(i)*self.sigma0Value(i))
+		summand5 = self.d2Value(i, k)/(self.rValue(i)*self.gSigma0Value(i))
+		summand6 = - 2*self.q*self.d1Value(i, k)/(self.rValue(i)*self.gSigma0Value(i))
+		summand7 = - self.d1Value(i, k)/(self.rValue(i)*self.gSigma0Value(i))
+		summand8 = self.q*(self.q+1)*self.delta(i, k)/(self.rValue(i)*self.gSigma0Value(i))
 		return summand1 \
 			   + summand2 \
 			   + summand3 \
@@ -515,7 +514,7 @@ class WMatrix(object):
 			   + summand8
 
 	def f2(self, i, k):
-		return - (self.kappaValue(i)**2*self.rValue(i)*self.delta(i, k))/(2*pi*G*self.sigma0Value(i))
+		return - (self.kappaValue(i)**2*self.rValue(i)*self.delta(i, k))/(2*pi*self.gSigma0Value(i))
 
 	def b0(self, i, k):
 		summand1 = - self.m * self.OmegaValue(i)*self.kappaValue(i)**2
@@ -585,7 +584,7 @@ class WMatrix(object):
 			summand5 = self.m*self.OmegaValue(i)*self.q*self.delta(i, k)/(self.SigmaValue(i)*self.rValue(i))
 			summand6 = -2*self.m*self.OmegaValue(i)*self.delta(i, k)/(self.SigmaValue(i)*self.rValue(i))
 			summand7 = - self.rValue(i)*self.delta(i, k)*self.m\
-					   *self.OmegaValue(i)/(2*pi*G*self.sigma0Value(i)*self.p)\
+					   *self.OmegaValue(i)/(2*pi*self.gSigma0Value(i)*self.p)\
 					   *(self.kappaValue(i)**2-self.m**2*self.OmegaValue(i)**2)
 			return summand1 + summand2 + summand3
 			+ summand4 + summand5 + summand6 + summand7
@@ -609,9 +608,9 @@ class WMatrix(object):
 			summand3 = self.d1Value(i, k)/(self.SigmaValue(i)*self.rValue(i))
 			summand4 = - self.q * self.delta(i, k)/(self.SigmaValue(i)*self.rValue(i))
 			summand5 = self.rValue(i)*self.delta(i, k)\
-					   *(self.kappaValue(i)**2-self.m**2*self.OmegaValue(i)**2)/(2*pi*G*self.p*self.sigma0Value(i))
+					   *(self.kappaValue(i)**2-self.m**2*self.OmegaValue(i)**2)/(2*pi*self.p*self.gSigma0Value(i))
 			summand6 = - self.rValue(i)*self.delta(i, k) \
-					   * self.m**2*self.OmegaValue(i)**2/(2*pi*G*self.sigma0Value(i)*self.p)
+					   * self.m**2*self.OmegaValue(i)**2/(2*pi*self.gSigma0Value(i)*self.p)
 			return summand1 + summand2 + summand3 + summand4 + summand5 + summand6
 		else:
 			summand1 = self.fA0(i, k) * self.x1(i, k)
@@ -623,14 +622,14 @@ class WMatrix(object):
 	def calcW2_ik(self, i, k):
 		if i==0:
 			return - self.delta(1, self.m) *3/2*self.OmegaValue(i)*self.rValue(i)**3\
-				   *self.jValue(i, k)/(G*(self.mStar+self.mDisk))
+				   *self.jValue(i, k)/(1+self.mRatio)
 		elif i==self.number-1:
 			summand1 = -self.delta(1, self.m)*3*self.OmegaValue(i)*self.rValue(i)**3\
-					   *self.jValue(i, k)/(2*G*(self.mStar+self.mDisk))
+					   *self.jValue(i, k)/(2*(1+self.mRatio))
 			summand2 = - self.m * self.OmegaValue(i) * self.rValue(i) * (-1) \
-					   * self.delta(i, k)/(2*pi*G*self.p*self.sigma0Value(i))
+					   * self.delta(i, k)/(2*pi*self.p*self.gSigma0Value(i))
 			summand3 = self.rValue(i)*self.delta(i, k)*2*self.m*self.OmegaValue(i)\
-					   /(2*pi*G*self.p*self.sigma0Value(i))
+					   /(2*pi*self.p*self.gSigma0Value(i))
 			return summand1 + summand2 + summand3
 		else:
 			summand1 = self.fA0(i, k)
@@ -643,10 +642,10 @@ class WMatrix(object):
 
 	def calcW3_ik(self, i, k):
 		if i==0:
-			return self.delta(1, self.m)*self.rValue(i)**3*self.jValue(i, k)/(2*G*(self.mStar + self.mDisk))
+			return self.delta(1, self.m)*self.rValue(i)**3*self.jValue(i, k)/(2*(1+self.mRatio))
 		elif i==self.number-1:
-			summand1 = (self.delta(1, self.m)*self.rValue(i)**3*self.jValue(i, k))/(2*G*(self.mStar+self.mDisk))
-			summand2 = (self.rValue(i)*self.delta(i, k)*(-1))/(2*pi*G*self.sigma0Value(i)*self.p)
+			summand1 = (self.delta(1, self.m)*self.rValue(i)**3*self.jValue(i, k))/(2*(1+self.mRatio))
+			summand2 = (self.rValue(i)*self.delta(i, k)*(-1))/(2*pi*self.gSigma0Value(i)*self.p)
 			return summand1 + summand2
 		else:
 			summand1 = self.fA2(i, k) * self.x1(i, k)
@@ -680,9 +679,6 @@ class WMatrix(object):
 			return summand1 + summand2 + summand3
 
 
-
-
-
 """ Given an instance of a fully initialized WMatrix object, this class uses the matrices B14A and B14C. The result is
 the wanted S vector (surface density purturbance).
 """
@@ -703,26 +699,3 @@ class EigenvalueSolver(object):
 	
 	def __calcEigen(self):
 		return sciLa.eig(self.wM.B14A, self.wM.B14C)
-
-
-"""
-
-# =================== TESTING AREA ===================
-
-import Params as P
-
-iP = P.InitialParameters(number=5000)
-dC = P.DerivedConstants(iP)
-
-la = LinearAlgebraFunctions(iP, dC)
-timeStart1 = t.clock()
-la.initLDMOne()
-la.initLDMTwo()
-timeEnd1 = t.clock()
-print "done1: took me [s]:", str(timeEnd1-timeStart1)
-timeStart2 = t.clock()
-la.initJMatrix()
-timeEnd2 = t.clock()
-print "done2: took me [s]:", str(timeEnd2-timeStart2)
-
-"""
