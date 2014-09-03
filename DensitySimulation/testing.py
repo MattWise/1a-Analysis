@@ -8,6 +8,8 @@ import sys
 
 import matplotlib.pyplot as plt
 
+np.set_printoptions(threshold=sys.maxint, edgeitems=sys.maxint, linewidth=sys.maxint)
+
 def timing(function):
 	timeStart = t.clock()
 	function()
@@ -16,7 +18,7 @@ def timing(function):
 
 # todo: number=10 -> complexWarning, unclear why.
 
-iP = Params.InitialParameters(number=10)
+iP = Params.InitialParameters(number=16)
 dC = Params.DerivedConstants(iP)
 
 
@@ -40,20 +42,22 @@ def init():
 
 init()
 
-sizeB14a = wM.B14A.nbytes
-sizeB14c = wM.B14C.nbytes
+print(wM.W5)
 
-print("size(B14a)=", sizeB14a)
-print("size(B14c)=", sizeB14c)
+"""
+
 
 eigSol = LinAl.EigenvalueSolver(wM)
-
-
 
 eigSol.initEigen()
 
 print("# of eigenvalues", len(eigSol.eigenvalues))
 
+print(eigSol.eigenvalues)
+
+"""
+
+"""
 real = []
 img = []
 
@@ -73,7 +77,9 @@ print("imagLen=" + str(len(img)))
 
 print(min(real), max(real))
 print(min(img), max(img))
+"""
 
+"""
 # plt.scatter(real[4:],img[4:])
 plt.scatter(real, img)
 plt.grid(True)
@@ -82,3 +88,4 @@ plt.ylabel("imagpart")
 plt.xlim(-10, 10)
 plt.ylim(-10, 10)
 plt.show()
+"""
