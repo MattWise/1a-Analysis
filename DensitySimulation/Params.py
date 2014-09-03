@@ -2,22 +2,19 @@ from __future__ import division
 
 import math as m
 import numpy as np
-from scipy import constants
 
 """ Representation of a set of initial conditions.
 """
 class InitialParameters(object):
-	def __init__(self, number=500, rStar=10 ** 11, rDisk=10 ** 15, p=1, q=5 / 8, mStar=10 ** 33, mDisk=10 ** 33,
-				 a0Star=10**6, m=1, eta=0.1):
+	def __init__(self, number=500, rRatio=10**4, p=1, q=5 / 8, mRatio=1,
+				 qStar=1, m=1, eta=0.1):
 		# do the assignments
 		self.number = number
-		self.rStar = rStar
-		self.rDisk = rDisk
+		self.rRatio = rRatio # equal to rDisk/rStar. Since rStar=1 because of natural units, it aquivalent to rDisk
 		self.p = p
 		self.q = q
-		self.mStar = mStar
-		self.mDisk = mDisk
-		self.a0Star = a0Star
+		self.mRatio = mRatio
+		self.qStar = qStar
 		self.m = m
 		self.eta = eta
 
@@ -25,10 +22,10 @@ class InitialParameters(object):
 	"""
 	def __str__(self):
 		return "number: " + str(self.number) \
-			   + "\n(rStar,rDisk): " + str((self.rStar, self.rDisk)) \
-			   + "\n(mStar,mDisk): " + str((self.mStar, self.mDisk)) \
+			   + "\nrRatio: " + str(self.rRatio) \
+			   + "\nmRatio: " + str(self.mRatio) \
 			   + "\n(p,q): " + str((self.p, self.q)) \
-			   + "\na0Star: " + str(self.a0Star) \
+			   + "\nqStar: " + str(self.qStar) \
 			   + "\nm: " + str(self.m) \
 			   + "\neta: " + str(self.eta)
 
@@ -40,9 +37,8 @@ class DerivedConstants(object):
 		# do the object creation.
 		self.initialParameters = initParams
 		self.n = 4 - (2 / initParams.q)
-		self.sigmaStar = self.__sigStar(initParams)
-		self.omegaStar = self.__omStar(initParams)
-		self.qStar = self.__qStar(initParams)
+		self.gSigma0Star = self.__gSig0Star(initParams)
+		self.a0Star = self.__a0Star(initParams)
 		self.radialCells = self.__radCells(initParams)
 
 	""" This class represents a set of radial grid points having given
@@ -88,28 +84,22 @@ class DerivedConstants(object):
 	"""
 	def __str__(self):
 		return "n: " + str(self.n) + "\n" \
-			   + "sigmaStar: " + str(self.sigmaStar) + "\n" \
-			   + "omegaStar: " + str(self.omegaStar) + "\n" \
-			   + "qStar: " + str(self.qStar) + "\n" \
+			   + "gSigma0Star: " + str(self.gSigma0Star) + "\n" \
+			   + "a0Star: " + str(self.a0Star) + "\n" \
 			   + "radialCells: " + str(self.radialCells)
 
 	""" sigmaStar constant for analytic form of sigma0. definition page 964, 23a and 23b.
 	"""
-	def __sigStar(self, iP):
-		return (2 - iP.p) * iP.mStar / \
-			   (2 * m.pi * iP.rStar ** 2 * ((iP.rDisk / iP.rStar) ** (2 - iP.p) - 1))
+	def __gSig0Star(self, iP):
+		return (2 - iP.p) * (self.initialParameters.mRatio) / \
+			   (2 * m.pi * ((iP.rRatio) ** (2 - iP.p) - 1))
 
-	""" omegaStar constant for qStar constant. definition page 964, 24.
+	""" aStar constant calculated from the other constants. derived, used 964, 24 and 964, 23b.
 	"""
-	def __omStar(self, iP):
-		return m.sqrt(constants.G * iP.mStar / (iP.rStar ** 2))
-
-	""" qStar constant. definition page 964, 24.
-	"""
-	def __qStar(self, iP):
-		return (self.omegaStar * iP.a0Star) / (m.pi * constants.G * self.sigmaStar)
+	def __a0Star(self, iP):
+		return iP.qStar*(2-iP.p)*iP.mRatio/(2*(iP.rRatio**(2-iP.p)-1))
 
 	""" creates a representation of the grid in respect to the initial parameter n.
 	"""
 	def __radCells(self, iP):
-		return self.RadialCells(iP.number, iP.rStar, iP.rDisk)
+		return self.RadialCells(iP.number, 1, iP.rRatio)
