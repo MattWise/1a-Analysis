@@ -7,10 +7,10 @@ import numpy as np
 """
 class InitialParameters(object):
 	def __init__(self, number=500, rRatio=10**4, p=1, q=5 / 8, mRatio=1,
-				 qStar=1, m=1, eta=0.1):
+				 qStar=.3, m=1, eta=0.1):
 		# do the assignments
 		self.number = number
-		self.rRatio = rRatio # equal to rDisk/rStar. Since rStar=1 because of natural units, it aquivalent to rDisk
+		self.rRatio = rRatio # equal to rDisk/rStar. Since rStar=1 because of natural units, it is equivalent to rDisk
 		self.p = p
 		self.q = q
 		self.mRatio = mRatio
