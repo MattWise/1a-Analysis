@@ -1,6 +1,6 @@
 from __future__ import division,print_function
 
-import Functions, LinAl, Params
+import Functions, LinAl, Params, Correctness
 import numpy as np
 import multiprocessing
 import time as t
@@ -8,7 +8,12 @@ import sys
 
 import matplotlib.pyplot as plt
 
+# constants
+seperator = "========================================================\n\n\n========================================================"
+
+# numpy settings
 np.set_printoptions(threshold=sys.maxint, edgeitems=sys.maxint, linewidth=sys.maxint)
+np.seterr(all="ignore") # this setting reveals the infinity problem
 
 def timing(function):
 	timeStart = t.clock()
@@ -16,14 +21,33 @@ def timing(function):
 	timeEnd = t.clock()
 	print("took me:", (timeEnd-timeStart), "s")
 
-# todo: number=10 -> complexWarning, unclear why.
+def determinants(wMatrix):
+	tmp = [wMatrix.W0, wMatrix.W1, wMatrix.W2, wMatrix.W3, wMatrix.W4, wMatrix.W5]
+	for i in range(len(tmp)):
+		print("det(W" + str(i) + ")=", str(np.linalg.det(tmp[i])))
+	print("det(B14A)=", str(np.linalg.det(wMatrix.B14A)))
+	print("det(B14C)=", str(np.linalg.det(wMatrix.B14C)))
 
-iP = Params.InitialParameters(number=16)
+def normalVSbadEigenvalues(eigenvalues):
+	normal=0
+	bad=0
+	for i in eigenvalues:
+		iReal = i.real
+		iImag = i.imag
+		if iReal in [np.inf, -np.inf] \
+				or iImag in [np.inf, -np.inf] \
+				or iReal in [np.nan, -np.nan] \
+				or iImag in [np.nan, -np.nan]:
+			bad += 1
+		else:
+			normal += 1
+	print(normal, bad)
+
+iP = Params.InitialParameters(number=100)
 dC = Params.DerivedConstants(iP)
 
 
 anaFcts = Functions.AnalyticalFunctions(iP, dC)
-
 dsctFcts = Functions.DiscreteFunctions(anaFcts)
 
 dsctFcts.init()
@@ -41,21 +65,23 @@ def init():
 	wM.initB14C()
 
 init()
+print("wM init() finished")
 
-print(wM.W5)
+print(seperator)
 
-"""
+#determinants(wM)
 
 
 eigSol = LinAl.EigenvalueSolver(wM)
-
 eigSol.initEigen()
 
-print("# of eigenvalues", len(eigSol.eigenvalues))
+correctness = Correctness.Correctness(eigSol)
 
-print(eigSol.eigenvalues)
+correctness.testB12(True)
+correctness.testB14(True)
 
-"""
+
+
 
 """
 real = []
@@ -77,8 +103,8 @@ print("imagLen=" + str(len(img)))
 
 print(min(real), max(real))
 print(min(img), max(img))
-"""
 
+"""
 """
 # plt.scatter(real[4:],img[4:])
 plt.scatter(real, img)
