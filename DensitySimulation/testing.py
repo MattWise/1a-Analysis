@@ -5,6 +5,7 @@ import numpy as np
 import multiprocessing
 import time as t
 import sys
+import scipy.linalg as sciLa
 
 import matplotlib.pyplot as plt
 
@@ -13,20 +14,13 @@ seperator = "========================================================\n\n\n=====
 
 # numpy settings
 np.set_printoptions(threshold=sys.maxint, edgeitems=sys.maxint, linewidth=sys.maxint)
-np.seterr(all="ignore") # this setting reveals the infinity problem
+#np.seterr(all="ignore") # this setting reveals the infinity problem
 
 def timing(function):
 	timeStart = t.clock()
 	function()
 	timeEnd = t.clock()
 	print("took me:", (timeEnd-timeStart), "s")
-
-def determinants(wMatrix):
-	tmp = [wMatrix.W0, wMatrix.W1, wMatrix.W2, wMatrix.W3, wMatrix.W4, wMatrix.W5]
-	for i in range(len(tmp)):
-		print("det(W" + str(i) + ")=", str(np.linalg.det(tmp[i])))
-	print("det(B14A)=", str(np.linalg.det(wMatrix.B14A)))
-	print("det(B14C)=", str(np.linalg.det(wMatrix.B14C)))
 
 def normalVSbadEigenvalues(eigenvalues):
 	normal=0
@@ -42,6 +36,37 @@ def normalVSbadEigenvalues(eigenvalues):
 		else:
 			normal += 1
 	print(normal, bad)
+
+def visualizeEigenvalues(eVal, verboseLevel):
+	real = []
+	imag = []
+
+	for z in eVal:
+		rp = z.real
+		im = z.imag
+		if not (rp == np.inf or rp == - np.inf) \
+				and not (im == np.inf or im == - np.inf):
+			real.append(rp)
+			imag.append(im)
+
+	if verboseLevel>=1:
+		print("length of regular real values=" + str(len(real)))
+		print("length of regular imag values=" + str(len(imag)))
+		print("minimal real part=" + str(min(real)), "& maximal real part=" + str(max(real)))
+		print("minimal imag part=" + str(min(imag)), "& maximal imag part=" + str(max(imag)))
+	if verboseLevel==2:
+		print("all real values:", str(real))
+		print("all imag values:", str(imag))
+
+
+	# plt.scatter(real[4:],img[4:])
+	plt.scatter(real, imag)
+	plt.grid(True)
+	plt.xlabel("realpart")
+	plt.ylabel("imagpart")
+	plt.xlim(-10, 10)
+	plt.ylim(-10, 10)
+	plt.show()
 
 iP = Params.InitialParameters(number=100)
 dC = Params.DerivedConstants(iP)
@@ -69,19 +94,25 @@ print("wM init() finished")
 
 print(seperator)
 
-#determinants(wM)
+# sciLa.eig(wM.B14A, wM.B14C) # gives division by 0 as known
+eVal, eVec = sciLa.eig(wM.B14C, wM.B14A) # seems to work
 
 
+visualizeEigenvalues(1/eVal, 2)
+
+
+
+"""
 eigSol = LinAl.EigenvalueSolver(wM)
 eigSol.initEigen()
+"""
 
+"""
 correctness = Correctness.Correctness(eigSol)
 
-correctness.testB12(True)
-correctness.testB14(True)
-
-
-
+b12 = correctness.testB12(True)
+b14 = correctness.testB14(True)
+"""
 
 """
 real = []
@@ -103,8 +134,8 @@ print("imagLen=" + str(len(img)))
 
 print(min(real), max(real))
 print(min(img), max(img))
-
 """
+
 """
 # plt.scatter(real[4:],img[4:])
 plt.scatter(real, img)
