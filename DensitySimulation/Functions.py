@@ -40,7 +40,7 @@ class AnalyticalFunctions(object):
 	""" the capital sigma. definition page 961, 1c
 	"""
 	def Sigma(self,r):
-		return np.complex128((2*constants.pi*self.gSigma0(r))/(self.a0(r)**2))
+		return np.complex128((2*constants.pi*self.gSigma0(r))/(self.a0(r)**2 * r**self.iP.p))
 
 
 """ this class represents everything we have in a discrete manner: discretized analytic functions and discrete

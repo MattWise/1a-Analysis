@@ -426,6 +426,12 @@ class WMatrix(object):
 		return summand1 + summand2
 
 	def fB2(self, i, k):
+		"""
+		if (i in range(6,9)) and (k in range(0,10)):
+			print "rValue=", self.rValue(i), "---> rValue**5=", self.rValue(i)**5
+			print "jValue", self.jValue(i, k)
+			print "mRatio", self.mRatio
+		"""
 		return self.delta(1, self.m) * self.rValue(i)**5/2\
 			   *(self.jValue(i, k))/(1+self.mRatio)
 
@@ -586,8 +592,8 @@ class WMatrix(object):
 			summand7 = - self.rValue(i)*self.delta(i, k)*self.m\
 					   *self.OmegaValue(i)/(2*pi*self.gSigma0Value(i)*self.p)\
 					   *(self.kappaValue(i)**2-self.m**2*self.OmegaValue(i)**2)
-			return summand1 + summand2 + summand3
-			+ summand4 + summand5 + summand6 + summand7
+			return summand1 + summand2 + summand3 \
+					+ summand4 + summand5 + summand6 + summand7
 		else:
 			summand1 = self.fA0(i, k) * (self.x0(i, k) + self.x2(i, k))
 			summand2 = self.fB0(i, k) * (self.y0(i, k) + self.y2(i, k))
@@ -676,6 +682,16 @@ class WMatrix(object):
 			summand1 = self.fA2(i, k) * self.x3(i, k)
 			summand2 = self.fB2(i, k) * self.y3(i, k)
 			summand3 = (self.c5(i, k) * self.f2(i, k))/(self.kappaValue(i)**5)
+			"""
+			if i==8 and (k in range(0,10)):
+				print "======"
+				print (i,k), "summand1", summand1
+				print (i,k), "summand2", summand2
+				print "--summand2--->"
+				print "------fB2---->", self.fB2(i,k)
+				print "------y3----->", self.y3(i,k)
+				print (i,k), "summand3", summand3
+			"""
 			return summand1 + summand2 + summand3
 
 
@@ -689,6 +705,7 @@ class EigenvalueSolver(object):
 		self.wM = wMatrix
 		self.eigenvalues = None
 		self.eigenvectors = None
+		self.S = None
 
 	def initEigen(self):
 		if self.wM.dFfullyInitialized \
